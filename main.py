@@ -1,11 +1,11 @@
 from tkinter import *
 import tkinter as tk
 from tkinter import ttk
-import tkinter.font as font
 from datetime import date
 import sqlite3
 import pendulum
-
+pendulum.week_starts_at(pendulum.SUNDAY)
+pendulum.week_ends_at(pendulum.SATURDAY)
 
 class Query:
     def __init__(self, index, frame):
@@ -79,9 +79,10 @@ class App:
                                    'does not starts with': 'NOT LIKE #%', 'does not contain': 'NOT LIKE %#%',
                                    'today': '= "' + str(date.today()) + ' 00:00:00"',
                                    'this year': '>= "' + str(date.today().year) + '-01-01" AND # < "'
-                                                + str(int(date.today().year) + 1) + '-01-01"', 'this week' : '>= "' + str(pendulum.now().subtract(weeks=1).date()) + '" AND # < "'
-                                                + str(pendulum.now().date()) + '"' , 'this month' : '>= "' + str(pendulum.now().subtract(months=1).date()) + '" AND # < "'
+                                                + str(int(date.today().year) + 1) + '-01-01"', 'this week' : '>= "' + str(pendulum.now().subtract(days=date.today().weekday()).date()) + '" AND # < "'
+                                                + str(pendulum.now().date()) + '"' , 'this month' : '>= "' + str(pendulum.now().subtract(days=date.today().day -1).date()) + '" AND # < "'
                                                 + str(pendulum.now().date()) + '"'}
+
         # init queries list
         self.queries_list = []
         self.count_queries = 0
@@ -253,7 +254,6 @@ class App:
                 )
             return
         elif 'INTEGER' or 'NUMERIC' in header_type:
-            print('im here data2')
             for label in self.filters_int_or_numeric:
                 query.menu_filter.add_radiobutton(
                     label=label,
