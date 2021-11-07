@@ -81,7 +81,10 @@ class App:
                                    'this year': '>= "' + str(date.today().year) + '-01-01" AND # < "'
                                                 + str(int(date.today().year) + 1) + '-01-01"', 'this week' : '>= "' + str(pendulum.now().subtract(days=date.today().weekday()).date()) + '" AND # < "'
                                                 + str(pendulum.now().date()) + '"' , 'this month' : '>= "' + str(pendulum.now().subtract(days=date.today().day -1).date()) + '" AND # < "'
-                                                + str(pendulum.now().date()) + '"'}
+                                                + str(pendulum.now().date()) + '"', 'last week' : '>= "' + str(pendulum.now().subtract(weeks=1)) + '" AND # < "'
+                                                + str(pendulum.now().date()) + '"', 'last month' : '>= "' + str(pendulum.now().subtract(months=1).date()) + '" AND # < "'
+                                                + str(pendulum.now().date()) + '"', 'last year' : '>= "' + str(pendulum.now().subtract(years=1).date()) + '" AND # < "'
+                                                + str(pendulum.now().date()) + '"' }
 
         # init queries list
         self.queries_list = []
