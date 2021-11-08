@@ -4,6 +4,7 @@ from tkinter import ttk
 from datetime import date
 import sqlite3
 import pendulum
+from tkcalendar import DateEntry
 pendulum.week_starts_at(pendulum.SUNDAY)
 pendulum.week_ends_at(pendulum.SATURDAY)
 
@@ -30,8 +31,15 @@ class Query:
         self.text_input = None
         self.label_between_to = None
         self.text_input_2 = None
+        self.date_entry = None
+        self.date_entry_2 = None
         self.init_filter(frame)
         self.init_text_input(frame)
+        self.init_date(frame)
+
+    def init_date(self, frame):
+        self.date_entry = DateEntry(frame)
+        self.date_entry_2 = DateEntry(frame)
 
     def init_filter(self, frame):
         self.selected_type_filter = StringVar()
@@ -58,7 +66,7 @@ class App:
         # init light theme
         self.root.tk.call("source", "azure.tcl")
         self.root.tk.call("set_theme", "light")
-
+        self.root.attributes('-topmost', True)
         self.root.geometry("800x700")
         self.root.title("Python Seminar Project")
 
@@ -79,12 +87,12 @@ class App:
                                    'does not starts with': 'NOT LIKE #%', 'does not contain': 'NOT LIKE %#%',
                                    'today': '= "' + str(date.today()) + ' 00:00:00"',
                                    'this year': '>= "' + str(date.today().year) + '-01-01" AND # < "'
-                                                + str(int(date.today().year) + 1) + '-01-01"', 'this week' : '>= "' + str(pendulum.now().subtract(days=date.today().weekday()).date()) + '" AND # < "'
+                                                + str(int(date.today().year) + 1) + '-01-01"', 'this week' : '>= "' + str(pendulum.now().subtract(days=date.today().weekday() + 1).date()) + '" AND # < "'
                                                 + str(pendulum.now().date()) + '"' , 'this month' : '>= "' + str(pendulum.now().subtract(days=date.today().day -1).date()) + '" AND # < "'
-                                                + str(pendulum.now().date()) + '"', 'last week' : '>= "' + str(pendulum.now().subtract(weeks=1)) + '" AND # < "'
+                                                + str(pendulum.now().date()) + '"', 'last week' : '>= "' + str(pendulum.now().subtract(weeks=1).date()) + '" AND # < "'
                                                 + str(pendulum.now().date()) + '"', 'last month' : '>= "' + str(pendulum.now().subtract(months=1).date()) + '" AND # < "'
                                                 + str(pendulum.now().date()) + '"', 'last year' : '>= "' + str(pendulum.now().subtract(years=1).date()) + '" AND # < "'
-                                                + str(pendulum.now().date()) + '"' }
+                                                + str(pendulum.now().date()) + '"', 'before' : '< ', 'after' : '> ', 'between' : '< # AND ^ >' }
 
         # init queries list
         self.queries_list = []
@@ -253,7 +261,7 @@ class App:
                     label=label,
                     variable=query.selected_type_filter,
                     value=label,
-                    command=lambda: self.initFilter(query)
+                    command=lambda: self.initFilterDate(query)
                 )
             return
         elif 'INTEGER' or 'NUMERIC' in header_type:
@@ -270,6 +278,8 @@ class App:
         query.text_input.grid_forget()
         query.label_between_to.grid_forget()
         query.text_input_2.grid_forget()
+        query.date_entry.grid_forget()
+        query.date_entry_2.grid_forget()
 
         selected_filter = query.selected_type_filter.get()
         query.menu_btn_filter.configure(text=selected_filter)
@@ -278,7 +288,6 @@ class App:
         if selected_filter in ('is between', 'is not between'):
             query.label_between_to = ttk.Label(self.frameQueries, text='to')
             query.label_between_to.grid(row=query.index, column=5, pady=10, padx=5)
-            query.text_input_2 = ttk.Entry(self.frameQueries)
             query.text_input_2.grid(row=query.index, column=6, pady=10, padx=10)
 
     def clear(self):
@@ -302,8 +311,10 @@ class App:
             else:
                 queryText += self.dict_attri_to_sign[query.selected_type_filter.get()]
             if self.dict_headers_types[query.selectedItemQuery.get()] in 'DATETIME':
-                print(str(query.selectedItemQuery.get()))
-                queryText = queryText.replace('#', str(query.selectedItemQuery.get()), 2)
+                if query.selected_type_filter.get() in ('before', 'after'):
+                    queryText += '"' + str(query.date_entry.get_date()) + '"'
+                else:
+                    queryText = queryText.replace('#', str(query.selectedItemQuery.get()), 2)
             else:
                 queryText = queryText.replace('#', str(query.text_input.get()))
         queryText += ";"
@@ -336,6 +347,25 @@ class App:
             self.root.tk.call("set_theme", "dark")
             self.switch.configure(text="Dark Mode")
             self.switch_is_on = True
+
+    def initFilterDate(self, query):
+        query.text_input.grid_forget()
+        query.label_between_to.grid_forget()
+        query.text_input_2.grid_forget()
+        query.date_entry.grid_forget()
+        query.date_entry_2.grid_forget()
+
+        selected_filter = query.selected_type_filter.get()
+        query.menu_btn_filter.configure(text=selected_filter)
+        if selected_filter in ('between'):
+            query.init_date(self.frameQueries)
+            query.date_entry.grid(row=query.index, column=4, pady=10, padx=10)
+            query.label_between_to = ttk.Label(self.frameQueries, text='to')
+            query.label_between_to.grid(row=query.index, column=5, pady=10, padx=5)
+            query.date_entry_2.grid(row=query.index, column=6, pady=10, padx=10)
+        if selected_filter in ('before', 'after'):
+            query.init_date(self.frameQueries)
+            query.date_entry.grid(row=query.index, column=4, pady=10, padx=10)
 
 
 def main():
