@@ -68,7 +68,7 @@ class App:
         self.root.tk.call("set_theme", "light")
         self.root.attributes('-topmost', True)
         self.root.geometry("800x700")
-        self.root.title("Python Seminar Project")
+        self.root.title("208942342#312500457 Seminar Project")
 
         # init arrays for filters type queries
         self.filters_char = ['starts with', 'contains', 'is equal to', 'does not starts with', 'does not contain',
@@ -81,8 +81,7 @@ class App:
                              'before', 'after', 'between']
 
         self.dict_attri_to_sign = {'is equal to': '= \'#\'', 'is less than': '< #', 'is less than or equal to': '<= #',
-                                   'is greater than': '> #',
-                                   'is greater than or equal to': '>= #',
+                                   'is greater than': '> #', 'is greater than or equal to': '>= #', 'is between' : '< # AND $ > #',
                                    'is not equal to': '!= #', 'starts with': 'LIKE \'#%\'', 'contains': 'LIKE \'%#%\'',
                                    'does not starts with': 'NOT LIKE \'#%\'', 'does not contain': 'NOT LIKE \'%#%\'',
                                    'today': '= "' + str(date.today()) + ' 00:00:00"',
@@ -198,8 +197,8 @@ class App:
         # creating headers with header name
         for index, value in enumerate(headers):
             # self.insertQueries(index, value)
-            self.tree.heading(index + 1, text=value, anchor=CENTER)
-            self.tree.column(index + 1, anchor=CENTER, stretch=YES)
+            self.tree.heading(index + 1, text=value)
+            self.tree.column(index + 1, stretch=YES, width=250)
         # define add button for adding new query
         add_query_btn = ttk.Button(self.frameMiddle, text="Add Query", command=self.addQuery)
         add_query_btn.grid(row=0, column=0, padx=10, pady=15)
@@ -317,6 +316,8 @@ class App:
                     queryText = queryText.replace('#', str(query.selectedItemQuery.get()), 2)
             else:
                 queryText = queryText.replace('#', str(query.text_input.get()))
+            if ((index + 1) < len(self.queries_list) and len(self.queries_list) > 1):
+                queryText += '\nAND '
         queryText += ";"
         print(queryText)
         self.dataQuery(len(self.dict_headers_types), queryText)
