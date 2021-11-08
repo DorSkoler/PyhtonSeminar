@@ -80,11 +80,11 @@ class App:
         self.filters_date = ['today', 'this week', 'last week', 'this month', 'last month', 'this year', 'last year',
                              'before', 'after', 'between']
 
-        self.dict_attri_to_sign = {'is equal to': '= #', 'is less than': '< #', 'is less than or equal to': '<= #',
+        self.dict_attri_to_sign = {'is equal to': '= \'#\'', 'is less than': '< #', 'is less than or equal to': '<= #',
                                    'is greater than': '> #',
                                    'is greater than or equal to': '>= #',
-                                   'is not equal to': '!= #', 'starts with': 'LIKE #%', 'contains': 'LIKE %#%',
-                                   'does not starts with': 'NOT LIKE #%', 'does not contain': 'NOT LIKE %#%',
+                                   'is not equal to': '!= #', 'starts with': 'LIKE \'#%\'', 'contains': 'LIKE \'%#%\'',
+                                   'does not starts with': 'NOT LIKE \'#%\'', 'does not contain': 'NOT LIKE \'%#%\'',
                                    'today': '= "' + str(date.today()) + ' 00:00:00"',
                                    'this year': '>= "' + str(date.today().year) + '-01-01" AND # < "'
                                                 + str(int(date.today().year) + 1) + '-01-01"', 'this week' : '>= "' + str(pendulum.now().subtract(days=date.today().weekday() + 1).date()) + '" AND # < "'
