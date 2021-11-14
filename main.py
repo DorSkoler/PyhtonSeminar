@@ -301,6 +301,7 @@ class App:
         self.selectedItem.set('Select Table')
         self.count_queries = 0
         self.menu_btn.configure(text=self.selectedItem.get())
+        self.error_msg("")
 
     def submit(self):
         self.label_error.configure(text='')
@@ -410,8 +411,6 @@ class App:
                 if not self.isfloat(input2):
                     self.error_msg("Only numbers or float allowed in filter " + str(index + 1))
                     return True
-        # if type in 'CHAR':
-        #     input = query.text_input.get().replace(" ", "")
 
         return False
 
