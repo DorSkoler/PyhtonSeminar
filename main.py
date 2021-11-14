@@ -306,21 +306,21 @@ class App:
         self.label_error.configure(text='')
         queryText = "SELECT * FROM " + self.selectedItem.get() + " \nWHERE "
         for index, query in enumerate(self.queries_list):
+            type = self.dict_headers_types[query.selectedItemQuery.get()]
+            if self.check_input(type, query, index):
+                return
             queryText += query.selectedItemQuery.get() + " "
             if query.selected_type_filter.get() in ('is between', 'is not between'):
-                queryText += query.selected_type_filter.get() + " " + query.text_input.get() + " to " + query.text_input_2.get()
+                queryText += query.selected_type_filter.get() + " " + query.text_input.get().replace(" ", "") + " to " + query.text_input_2.get().replace(" ", "")
             else:
                 queryText += self.dict_attri_to_sign[query.selected_type_filter.get()]
-            if self.dict_headers_types[query.selectedItemQuery.get()] in 'DATETIME':
+            if type in 'DATETIME':
                 if query.selected_type_filter.get() in ('before', 'after'):
-                    if query.date_entry.get_date() > date.today():
-                        self.error_msg("Wrong Date")
-                        return
                     queryText += '"' + str(query.date_entry.get_date()) + '"'
                 else:
                     queryText = queryText.replace('#', str(query.selectedItemQuery.get()), 2)
             else:
-                queryText = queryText.replace('#', str(query.text_input.get()))
+                queryText = queryText.replace('#', str(query.text_input.get().replace(" ", "")))
             if ((index + 1) < len(self.queries_list) and len(self.queries_list) > 1):
                 queryText += '\nAND '
         queryText += ";"
@@ -382,6 +382,45 @@ class App:
         self.label_error = Label(self.frameError)
         self.label_error.pack()
 
+    # checking if the input we get is correct
+    # getting type of input, the query data to get input, and index of the filter
+    # returns True for bad input, False for good input
+    def check_input(self, type, query, index):
+        if 'DATETIME' in type:
+            if query.date_entry.get_date() > date.today():
+                self.error_msg("Wrong Date in filter number " + str(index + 1))
+                return True
+        if 'INTEGER' in type:
+            input = query.text_input.get().replace(" ", "")
+            input2 = query.text_input_2.get().replace(" ", "")
+            if not input.isdigit():
+               self.error_msg("Only numbers allowed in filter " + str(index + 1))
+               return True
+            if query.selected_type_filter.get() in ('is between', 'is not between'):
+                if not input2.isdigit():
+                    self.error_msg("Only numbers allowed in filter " + str(index + 1))
+                    return True
+        if 'NUMERIC' in type:
+            input = query.text_input.get().replace(" ", "")
+            input2 = query.text_input_2.get().replace(" ", "")
+            if not self.isfloat(input):
+                self.error_msg("Only numbers or float allowed in filter " + str(index + 1))
+                return True
+            if query.selected_type_filter.get() in ('is between', 'is not between'):
+                if not self.isfloat(input2):
+                    self.error_msg("Only numbers or float allowed in filter " + str(index + 1))
+                    return True
+        # if type in 'CHAR':
+        #     input = query.text_input.get().replace(" ", "")
+
+        return False
+
+    def isfloat(self, value):
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
 
 def main():
     App('chinook.db')
