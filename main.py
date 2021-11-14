@@ -315,11 +315,13 @@ class App:
                 queryText += query.selected_type_filter.get() + " " + query.text_input.get().replace(" ", "") + " to " + query.text_input_2.get().replace(" ", "")
             else:
                 queryText += self.dict_attri_to_sign[query.selected_type_filter.get()]
-            if type in 'DATETIME':
+            if 'DATETIME' in type:
                 if query.selected_type_filter.get() in ('before', 'after'):
                     queryText += '"' + str(query.date_entry.get_date()) + '"'
                 else:
                     queryText = queryText.replace('#', str(query.selectedItemQuery.get()), 2)
+            elif 'CHAR' in type:
+                queryText = queryText.replace('#', str(query.text_input.get()))
             else:
                 queryText = queryText.replace('#', str(query.text_input.get().replace(" ", "")))
             if ((index + 1) < len(self.queries_list) and len(self.queries_list) > 1):
