@@ -67,7 +67,7 @@ class App:
         self.root.tk.call("source", "azure.tcl")
         self.root.tk.call("set_theme", "light")
         self.root.attributes('-topmost', True)
-        self.root.geometry("800x700")
+        self.root.geometry("800x900")
         self.root.title("208942342#312500457 Seminar Project")
 
         # init arrays for filters type queries
@@ -109,6 +109,7 @@ class App:
         self.frameQueries = Frame(self.root, height=150, width=300)
 
         self.initFrameFooter()
+        self.init_errorFrame()
 
         self.root.mainloop()
 
@@ -302,6 +303,7 @@ class App:
         self.menu_btn.configure(text=self.selectedItem.get())
 
     def submit(self):
+        self.label_error.configure(text='')
         queryText = "SELECT * FROM " + self.selectedItem.get() + " \nWHERE "
         for index, query in enumerate(self.queries_list):
             queryText += query.selectedItemQuery.get() + " "
@@ -311,6 +313,9 @@ class App:
                 queryText += self.dict_attri_to_sign[query.selected_type_filter.get()]
             if self.dict_headers_types[query.selectedItemQuery.get()] in 'DATETIME':
                 if query.selected_type_filter.get() in ('before', 'after'):
+                    if query.date_entry.get_date() > date.today():
+                        self.error_msg("Wrong Date")
+                        return
                     queryText += '"' + str(query.date_entry.get_date()) + '"'
                 else:
                     queryText = queryText.replace('#', str(query.selectedItemQuery.get()), 2)
@@ -367,6 +372,15 @@ class App:
         if selected_filter in ('before', 'after'):
             query.init_date(self.frameQueries)
             query.date_entry.grid(row=query.index, column=4, pady=10, padx=10)
+
+    def error_msg(self, msg):
+        self.label_error.configure(text=msg, fg='red')
+
+    def init_errorFrame(self):
+        self.frameError = Frame(self.root)
+        self.frameError.pack(side=BOTTOM, pady=25)
+        self.label_error = Label(self.frameError)
+        self.label_error.pack()
 
 
 def main():
