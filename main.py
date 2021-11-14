@@ -38,8 +38,8 @@ class Query:
         self.init_date(frame)
 
     def init_date(self, frame):
-        self.date_entry = DateEntry(frame)
-        self.date_entry_2 = DateEntry(frame)
+        self.date_entry = DateEntry(frame, selectmode='day', date_pattern='dd/MM/yyyy')
+        self.date_entry_2 = DateEntry(frame, selectmode='day', date_pattern='dd/MM/yyyy')
 
     def init_filter(self, frame):
         self.selected_type_filter = StringVar()
@@ -416,6 +416,8 @@ class App:
 
         return False
 
+    # checking if value sent is float or not
+    # returns True or False
     def isfloat(self, value):
         try:
             float(value)
