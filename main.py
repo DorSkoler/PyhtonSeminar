@@ -5,8 +5,10 @@ from datetime import date
 import sqlite3
 import pendulum
 from tkcalendar import DateEntry
+
 pendulum.week_starts_at(pendulum.SUNDAY)
 pendulum.week_ends_at(pendulum.SATURDAY)
+
 
 class Query:
     def __init__(self, index, frame):
@@ -76,22 +78,31 @@ class App:
         self.filters_int_or_numeric = ['is equal to', 'is between', 'is less than', 'is less than or equal to',
                                        'is greater than',
                                        'is greater than or equal to',
-                                       'is not equal to', 'is not between']
+                                       'is not equal to']
         self.filters_date = ['today', 'this week', 'last week', 'this month', 'last month', 'this year', 'last year',
                              'before', 'after', 'between']
 
         self.dict_attri_to_sign = {'is equal to': '= \'#\'', 'is less than': '< #', 'is less than or equal to': '<= #',
-                                   'is greater than': '> #', 'is greater than or equal to': '>= #', 'is between' : '< # AND $ > #',
+                                   'is greater than': '> #', 'is greater than or equal to': '>= #',
+                                   'is between': '< # AND $ > #',
                                    'is not equal to': '!= #', 'starts with': 'LIKE \'#%\'', 'contains': 'LIKE \'%#%\'',
                                    'does not starts with': 'NOT LIKE \'#%\'', 'does not contain': 'NOT LIKE \'%#%\'',
                                    'today': '= "' + str(date.today()) + ' 00:00:00"',
                                    'this year': '>= "' + str(date.today().year) + '-01-01" AND # < "'
-                                                + str(int(date.today().year) + 1) + '-01-01"', 'this week' : '>= "' + str(pendulum.now().subtract(days=date.today().weekday() + 1).date()) + '" AND # < "'
-                                                + str(pendulum.now().date()) + '"' , 'this month' : '>= "' + str(pendulum.now().subtract(days=date.today().day -1).date()) + '" AND # < "'
-                                                + str(pendulum.now().date()) + '"', 'last week' : '>= "' + str(pendulum.now().subtract(weeks=1).date()) + '" AND # < "'
-                                                + str(pendulum.now().date()) + '"', 'last month' : '>= "' + str(pendulum.now().subtract(months=1).date()) + '" AND # < "'
-                                                + str(pendulum.now().date()) + '"', 'last year' : '>= "' + str(pendulum.now().subtract(years=1).date()) + '" AND # < "'
-                                                + str(pendulum.now().date()) + '"', 'before' : '< ', 'after' : '> ', 'between' : '< # AND ^ >' }
+                                                + str(int(date.today().year) + 1) + '-01-01"',
+                                   'this week': '>= "' + str(
+                                       pendulum.now().subtract(days=date.today().weekday() + 1).date()) + '" AND # < "'
+                                                + str(pendulum.now().date()) + '"', 'this month': '>= "' + str(
+                pendulum.now().subtract(days=date.today().day - 1).date()) + '" AND # < "'
+                                                                                                  + str(
+                pendulum.now().date()) + '"',
+                                   'last week': '>= "' + str(pendulum.now().subtract(weeks=1).date()) + '" AND # < "'
+                                                + str(pendulum.now().date()) + '"',
+                                   'last month': '>= "' + str(pendulum.now().subtract(months=1).date()) + '" AND # < "'
+                                                 + str(pendulum.now().date()) + '"',
+                                   'last year': '>= "' + str(pendulum.now().subtract(years=1).date()) + '" AND # < "'
+                                                + str(pendulum.now().date()) + '"', 'before': '< ', 'after': '> ',
+                                   'between': '> "^1" AND # < "^2"'}
 
         # init queries list
         self.queries_list = []
@@ -198,10 +209,10 @@ class App:
         # creating headers with header name
         for index, value in enumerate(headers):
             # self.insertQueries(index, value)
-            self.tree.heading(index + 1, text=value)
+            self.tree.heading(index + 1, text=value, anchor='nw')
             self.tree.column(index + 1, stretch=YES, width=250)
         # define add button for adding new query
-        add_query_btn = ttk.Button(self.frameMiddle, text="Add Query", command=self.addQuery)
+        add_query_btn = ttk.Button(self.frameMiddle, text="Add Filter", command=self.addQuery)
         add_query_btn.grid(row=0, column=0, padx=10, pady=15)
         # define submit button for the current query
         submit_btn = ttk.Button(self.frameMiddle, text="Submit", command=self.submit)
@@ -311,13 +322,18 @@ class App:
             if self.check_input(type, query, index):
                 return
             queryText += query.selectedItemQuery.get() + " "
-            if query.selected_type_filter.get() in ('is between', 'is not between'):
-                queryText += query.selected_type_filter.get() + " " + query.text_input.get().replace(" ", "") + " to " + query.text_input_2.get().replace(" ", "")
+            if query.selected_type_filter.get() == 'is between':
+                queryText += "between " + \
+                             query.text_input.get().replace(" ", "") + " AND " + query.text_input_2.get().replace(" ", "")
             else:
                 queryText += self.dict_attri_to_sign[query.selected_type_filter.get()]
             if 'DATETIME' in type:
                 if query.selected_type_filter.get() in ('before', 'after'):
                     queryText += '"' + str(query.date_entry.get_date()) + '"'
+                elif query.selected_type_filter.get() in 'between':
+                    queryText = queryText.replace('#', str(query.selectedItemQuery.get()), 2)
+                    queryText = queryText.replace('^2', str(query.date_entry_2.get_date()), 2)
+                    queryText = queryText.replace('^1', str(query.date_entry.get_date()), 2)
                 else:
                     queryText = queryText.replace('#', str(query.selectedItemQuery.get()), 2)
             elif 'CHAR' in type:
@@ -344,6 +360,7 @@ class App:
         for row in self.mycursor:
             self.tree.insert('', 'end', values=row[0:headers_length])
 
+    # setting theme color
     def change_theme(self):
         if self.switch_is_on is True:
             # Set light theme
@@ -357,6 +374,9 @@ class App:
             self.switch.configure(text="Dark Mode")
             self.switch_is_on = True
 
+    # initialize the date picker
+    # input: the query data
+    # output: None
     def initFilterDate(self, query):
         query.text_input.grid_forget()
         query.label_between_to.grid_forget()
@@ -376,9 +396,13 @@ class App:
             query.init_date(self.frameQueries)
             query.date_entry.grid(row=query.index, column=4, pady=10, padx=10)
 
+    # call to change error label text
+    # input: string
+    # output: None
     def error_msg(self, msg):
         self.label_error.configure(text=msg, fg='red')
 
+    # initialize error frame
     def init_errorFrame(self):
         self.frameError = Frame(self.root)
         self.frameError.pack(side=BOTTOM, pady=25)
@@ -393,27 +417,48 @@ class App:
             if query.date_entry.get_date() > date.today():
                 self.error_msg("Wrong Date in filter number " + str(index + 1))
                 return True
+            if query.selected_type_filter.get() in 'between':
+                if query.date_entry.get_date() > date.today() or query.date_entry_2.get_date() > date.today() \
+                        or query.date_entry.get_date() > query.date_entry_2.get_date():
+                    self.error_msg("Wrong Date in filter number " + str(index + 1))
+                    return True
         if 'INTEGER' in type:
-            input = query.text_input.get().replace(" ", "")
-            input2 = query.text_input_2.get().replace(" ", "")
-            if not input.isdigit():
-               self.error_msg("Only numbers allowed in filter " + str(index + 1))
-               return True
+            input_int = query.text_input.get().replace(" ", "")
+            input_int_2 = query.text_input_2.get().replace(" ", "")
+            if len(input_int) == 0:
+                self.error_msg("no input in filter " + str(index + 1))
+                return True
+            if not input_int.isdigit():
+                self.error_msg("Only numbers allowed in filter " + str(index + 1))
+                return True
             if query.selected_type_filter.get() in ('is between', 'is not between'):
-                if not input2.isdigit():
+                if len(input_int_2) == 0:
+                    self.error_msg("no input in filter " + str(index + 1))
+                    return True
+                if not input_int_2.isdigit():
                     self.error_msg("Only numbers allowed in filter " + str(index + 1))
                     return True
         if 'NUMERIC' in type:
-            input = query.text_input.get().replace(" ", "")
-            input2 = query.text_input_2.get().replace(" ", "")
-            if not self.isfloat(input):
+            input_numeric = query.text_input.get().replace(" ", "")
+            input_numeric_2 = query.text_input_2.get().replace(" ", "")
+            if len(input_numeric) == 0:
+                self.error_msg("no input in filter " + str(index + 1))
+                return True
+            if not self.isfloat(input_numeric):
                 self.error_msg("Only numbers or float allowed in filter " + str(index + 1))
                 return True
             if query.selected_type_filter.get() in ('is between', 'is not between'):
-                if not self.isfloat(input2):
+                if len(input_numeric_2) == 0:
+                    self.error_msg("no input in filter " + str(index + 1))
+                    return True
+                if not self.isfloat(input_numeric_2):
                     self.error_msg("Only numbers or float allowed in filter " + str(index + 1))
                     return True
-
+        if 'CHAR' in type:
+            input_char = query.text_input.get().replace(" ", "")
+            if len(input_char) == 0:
+                self.error_msg("no input in filter " + str(index + 1))
+                return True
         return False
 
     # checking if value sent is float or not
@@ -424,6 +469,7 @@ class App:
             return True
         except ValueError:
             return False
+
 
 def main():
     App('chinook.db')
