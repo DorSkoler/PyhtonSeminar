@@ -81,7 +81,7 @@ class App:
                                        'is not equal to']
         self.filters_date = ['today', 'this week', 'last week', 'this month', 'last month', 'this year', 'last year',
                              'before', 'after', 'between']
-
+        # dictionary for assigning label filter to the actual sign
         self.dict_attri_to_sign = {'is equal to': '= \'#\'', 'is less than': '< #', 'is less than or equal to': '<= #',
                                    'is greater than': '> "#"', 'is greater than or equal to': '>= #',
                                    'is between': '< # AND $ > #',
@@ -319,7 +319,7 @@ class App:
         queryText = "SELECT * FROM " + self.selectedItem.get() + " \nWHERE "
         for index, query in enumerate(self.queries_list):
             if query.selectedItemQuery.get() == 'Select Attribute':
-                self.error_msg("No Filter selected in filter " + str(index+1))
+                self.error_msg("No Filter selected in filter " + str(index + 1))
                 return
             type = self.dict_headers_types[query.selectedItemQuery.get()]
             if self.check_input(type, query, index):
@@ -327,7 +327,8 @@ class App:
             queryText += query.selectedItemQuery.get() + " "
             if query.selected_type_filter.get() == 'is between':
                 queryText += "between " + \
-                             query.text_input.get().replace(" ", "") + " AND " + query.text_input_2.get().replace(" ", "")
+                             query.text_input.get().replace(" ", "") + " AND " + query.text_input_2.get().replace(" ",
+                                                                                                                  "")
             else:
                 queryText += self.dict_attri_to_sign[query.selected_type_filter.get()]
             if 'DATETIME' in type:
