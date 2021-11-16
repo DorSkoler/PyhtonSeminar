@@ -83,7 +83,7 @@ class App:
                              'before', 'after', 'between']
 
         self.dict_attri_to_sign = {'is equal to': '= \'#\'', 'is less than': '< #', 'is less than or equal to': '<= #',
-                                   'is greater than': '> #', 'is greater than or equal to': '>= #',
+                                   'is greater than': '> "#"', 'is greater than or equal to': '>= #',
                                    'is between': '< # AND $ > #',
                                    'is not equal to': '!= #', 'starts with': 'LIKE \'#%\'', 'contains': 'LIKE \'%#%\'',
                                    'does not starts with': 'NOT LIKE \'#%\'', 'does not contain': 'NOT LIKE \'%#%\'',
@@ -318,6 +318,9 @@ class App:
         self.label_error.configure(text='')
         queryText = "SELECT * FROM " + self.selectedItem.get() + " \nWHERE "
         for index, query in enumerate(self.queries_list):
+            if query.selectedItemQuery.get() == 'Select Attribute':
+                self.error_msg("No Filter selected in filter " + str(index+1))
+                return
             type = self.dict_headers_types[query.selectedItemQuery.get()]
             if self.check_input(type, query, index):
                 return
@@ -337,10 +340,10 @@ class App:
                 else:
                     queryText = queryText.replace('#', str(query.selectedItemQuery.get()), 2)
             elif 'CHAR' in type:
-                queryText = queryText.replace('#', str(query.text_input.get()))
+                queryText = queryText.replace('#', str(query.text_input.get().replace(" ", "")))
             else:
                 queryText = queryText.replace('#', str(query.text_input.get().replace(" ", "")))
-            if ((index + 1) < len(self.queries_list) and len(self.queries_list) > 1):
+            if (index + 1) < len(self.queries_list) and len(self.queries_list) > 1:
                 queryText += '\nAND '
         queryText += ";"
         print(queryText)
