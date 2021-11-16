@@ -117,7 +117,14 @@ class App:
 
         self.frameMiddle = Frame(self.root, height=10, width=300)
 
-        self.frameQueries = Frame(self.root, height=150, width=300)
+        self.mycanvas = Canvas(self.root, height=150, width=300)
+        self.yscrollbar = ttk.Scrollbar(self.mycanvas, orient=VERTICAL, command=self.mycanvas.yview)
+        self.yscrollbar.pack(side=RIGHT, fill=Y)
+        self.mycanvas.configure(yscrollcommand=self.yscrollbar.set)
+        self.mycanvas.bind('<Configure>', lambda x: self.mycanvas.configure(scrollregion=self.mycanvas.bbox('all')))
+        self.frameQueries = Frame(self.mycanvas, height=150, width=300)
+        self.frameQueries.pack()
+        self.mycanvas.create_window((0, 0), window=self.frameQueries)
 
         self.initFrameFooter()
         self.init_errorFrame()
@@ -192,8 +199,8 @@ class App:
         for child in self.frameQueries.winfo_children():
             child.destroy()
         self.frameMiddle.pack(pady=5, padx=50)
-        self.frameQueries.pack(pady=25, padx=50)
-
+        # self.frameQueries.pack(pady=25, padx=50)
+        self.mycanvas.pack(fill=BOTH, expand=YES, pady=25, padx=50)
         selectedTableName = self.selectedItem.get()
         self.mycursor.execute("PRAGMA table_info(" + selectedTableName + ")")
         # list of tuple that contains header name and type.
