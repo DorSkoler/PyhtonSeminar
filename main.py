@@ -81,6 +81,7 @@ class App:
                                        'is not equal to']
         self.filters_date = ['today', 'this week', 'last week', 'this month', 'last month', 'this year', 'last year',
                              'before', 'after', 'between']
+
         # dictionary for assigning label filter to the actual sign
         self.dict_attri_to_sign = {'is equal to': '= \'#\'', 'is less than': '< #', 'is less than or equal to': '<= #',
                                    'is greater than': '> "#"', 'is greater than or equal to': '>= #',
@@ -117,14 +118,7 @@ class App:
 
         self.frameMiddle = Frame(self.root, height=10, width=300)
 
-        self.mycanvas = Canvas(self.root, height=150, width=300)
-        self.yscrollbar = ttk.Scrollbar(self.mycanvas, orient=VERTICAL, command=self.mycanvas.yview)
-        self.yscrollbar.pack(side=RIGHT, fill=Y)
-        self.mycanvas.configure(yscrollcommand=self.yscrollbar.set)
-        self.mycanvas.bind('<Configure>', lambda x: self.mycanvas.configure(scrollregion=self.mycanvas.bbox('all')))
-        self.frameQueries = Frame(self.mycanvas, height=150, width=300)
-        self.frameQueries.pack()
-        self.mycanvas.create_window((0, 0), window=self.frameQueries)
+        self.initFrameQuery()
 
         self.initFrameFooter()
         self.init_errorFrame()
@@ -155,6 +149,23 @@ class App:
                 command=self.initSelectedTable
             )
 
+    def initFrameQuery(self):
+        self.frameQueriesMain = LabelFrame(self.root)
+        self.mycanvas = Canvas(self.frameQueriesMain, scrollregion=(0, 0, 850, 500))
+        self.yscrollbar = ttk.Scrollbar(self.frameQueriesMain, orient=VERTICAL, command=self.mycanvas.yview)
+        self.xscrollbar = ttk.Scrollbar(self.frameQueriesMain, orient=HORIZONTAL, command=self.mycanvas.xview)
+        self.yscrollbar.pack(side=RIGHT, fill=Y)
+        self.xscrollbar.pack(side=BOTTOM, fill=X)
+        self.mycanvas.pack(fill=BOTH)
+        self.mycanvas.configure(yscrollcommand=self.yscrollbar.set, xscrollcommand=self.xscrollbar.set)
+        self.frameQueries = Frame(self.mycanvas)
+        self.frameQueries.pack()
+        self.mycanvas.create_window((0, 0), anchor='nw', window=self.frameQueries)
+        self.mycanvas.bind('<MouseWheel>', lambda x: self.mycanvas.yview_scroll(int(-1 * (x.delta / 120)), "units"))
+        self.frameQueries.bind('<MouseWheel>', lambda x: self.mycanvas.yview_scroll(int(-1 * (x.delta / 120)), "units"))
+        self.frameQueriesMain.bind('<MouseWheel>',
+                                   lambda x: self.mycanvas.yview_scroll(int(-1 * (x.delta / 120)), "units"))
+
     def initBtn(self):
         self.menu_btn = ttk.Menubutton(self.frameHeader, text=self.selectedItem.get())
         self.menu = Menu(self.menu_btn, tearoff=0)
@@ -163,7 +174,7 @@ class App:
 
     def initFrameTable(self):
         self.frameTable = Frame(self.root)
-        self.tree = ttk.Treeview(self.frameTable, height=10, show="headings")
+        self.tree = ttk.Treeview(self.frameTable, height=7, show="headings")
         self.frameTable.configure(height=200)
         self.y_scrollbar = Scrollbar(self.frameTable, orient=VERTICAL, command=self.tree.yview)
         self.x_scrollbar = Scrollbar(self.frameTable, orient=HORIZONTAL, command=self.tree.xview)
@@ -199,8 +210,7 @@ class App:
         for child in self.frameQueries.winfo_children():
             child.destroy()
         self.frameMiddle.pack(pady=5, padx=50)
-        # self.frameQueries.pack(pady=25, padx=50)
-        self.mycanvas.pack(fill=BOTH, expand=YES, pady=25, padx=50)
+        self.frameQueriesMain.pack(pady=10, padx=10, expand=YES, fill=BOTH)
         selectedTableName = self.selectedItem.get()
         self.mycursor.execute("PRAGMA table_info(" + selectedTableName + ")")
         # list of tuple that contains header name and type.
@@ -315,13 +325,16 @@ class App:
         self.frameTable.pack_forget()
         self.queries_list.clear()
         self.frameMiddle.pack_forget()
-        self.frameQueries.pack_forget()
+        self.frameQueriesMain.pack_forget()
         self.selectedItem.set('Select Table')
         self.count_queries = 0
         self.menu_btn.configure(text=self.selectedItem.get())
         self.error_msg("")
 
     def submit(self):
+        if len(self.queries_list) == 0:
+            self.error_msg("click add filter")
+            return
         self.label_error.configure(text='')
         queryText = "SELECT * FROM " + self.selectedItem.get() + " \nWHERE "
         for index, query in enumerate(self.queries_list):
