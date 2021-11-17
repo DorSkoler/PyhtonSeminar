@@ -18,10 +18,10 @@ class Query:
         self.remove_button = ttk.Button(frame, image=self.image)
         self.remove_button.grid(row=index, column=0, pady=5, padx=5)
 
-        self.selectedItemQuery = StringVar()
-        self.selectedItemQuery.set('Select Attribute')
+        self.selected_attribute = StringVar()
+        self.selected_attribute.set('Select Attribute')
 
-        self.menu_btn_attribute = ttk.Menubutton(frame, text=self.selectedItemQuery.get())
+        self.menu_btn_attribute = ttk.Menubutton(frame, text=self.selected_attribute.get())
         self.menu_attribute = Menu(self.menu_btn_attribute, tearoff=0)
         self.menu_btn_attribute["menu"] = self.menu_attribute
         self.menu_btn_attribute.grid(row=index, column=2, pady=5)
@@ -30,7 +30,7 @@ class Query:
         self.label_select_attribute.grid(row=index, column=1, pady=5)
 
         # init menu button for select option by type
-        self.selected_type_filter = None
+        self.selected_filter_type = None
         self.menu_btn_filter = None
         self.menu_filter = None
         self.label_select_filter = None
@@ -48,10 +48,10 @@ class Query:
         self.date_entry_2 = DateEntry(frame, selectmode='day', date_pattern='dd/MM/yyyy')
 
     def init_filter(self, frame):
-        self.selected_type_filter = StringVar()
-        self.selected_type_filter.set('Select filter')
+        self.selected_filter_type = StringVar()
+        self.selected_filter_type.set('Select Filter')
 
-        self.menu_btn_filter = ttk.Menubutton(frame, text=self.selected_type_filter.get())
+        self.menu_btn_filter = ttk.Menubutton(frame, text=self.selected_filter_type.get())
         self.menu_filter = Menu(self.menu_btn_filter)
         self.menu_btn_filter["menu"] = self.menu_filter
 
@@ -249,7 +249,7 @@ class App:
         submit_btn = ttk.Button(self.frameMiddle, text="Submit", command=self.submit)
         submit_btn.grid(row=0, column=1, padx=10, pady=15)
 
-        self.data(length_headers)
+        self.execute_selected_table(length_headers)
         self.menu_btn.configure(text=selectedTableName)
 
     def add_query(self):
@@ -262,13 +262,14 @@ class App:
         for header_name, header_type in self.dict_headers_types.items():
             new_query.menu_attribute.add_radiobutton(
                 label=header_name,
-                variable=new_query.selectedItemQuery,
+                variable=new_query.selected_attribute,
                 value=header_name,
                 command=lambda: self.init_query(new_query)
             )
 
         # array of all queries
         self.queries_list.append(new_query)
+        self.error_msg("")
 
     def init_query(self, query):
         # each time the user select query attribute, the recent filter will be removed and a new one will be added.
@@ -280,7 +281,7 @@ class App:
 
         query.init_filter(self.frameQueries)
 
-        selected_item_query = query.selectedItemQuery.get()
+        selected_item_query = query.selected_attribute.get()
         query.menu_btn_attribute.configure(text=selected_item_query)
 
         # adding label and menu filter for the selected query attribute
@@ -293,7 +294,7 @@ class App:
             for label in self.filters_char:
                 query.menu_filter.add_radiobutton(
                     label=label,
-                    variable=query.selected_type_filter,
+                    variable=query.selected_filter_type,
                     value=label,
                     command=lambda: self.init_filter(query)
                 )
@@ -302,7 +303,7 @@ class App:
             for label in self.filters_date:
                 query.menu_filter.add_radiobutton(
                     label=label,
-                    variable=query.selected_type_filter,
+                    variable=query.selected_filter_type,
                     value=label,
                     command=lambda: self.init_filter_date(query)
                 )
@@ -311,7 +312,7 @@ class App:
             for label in self.filters_int_or_numeric:
                 query.menu_filter.add_radiobutton(
                     label=label,
-                    variable=query.selected_type_filter,
+                    variable=query.selected_filter_type,
                     value=label,
                     command=lambda: self.init_filter(query)
                 )
@@ -324,7 +325,7 @@ class App:
         query.date_entry.grid_forget()
         query.date_entry_2.grid_forget()
 
-        selected_filter = query.selected_type_filter.get()
+        selected_filter = query.selected_filter_type.get()
         query.menu_btn_filter.configure(text=selected_filter)
         query.init_text_input(self.frameQueries)
         query.text_input.grid(row=query.index, column=5, pady=10, padx=10)
@@ -333,6 +334,9 @@ class App:
             query.label_between_to.grid(row=query.index, column=6, pady=10, padx=5)
             query.text_input_2.grid(row=query.index, column=7, pady=10, padx=10)
 
+    # call to clear all relevant frames, filters and queries
+    # input: None
+    # output: None
     def clear(self):
         for x in self.tree.get_children():
             self.tree.delete(x)
@@ -346,36 +350,55 @@ class App:
         self.menu_btn.configure(text=self.selectedItem.get())
         self.error_msg("")
 
+    # call to submit the input by the user
+    # input: string
+    # output: None
     def submit(self):
+        # if there is no filters added a message will appear to the user
         if len(self.queries_list) == 0:
-            self.error_msg("click add filter")
+            self.error_msg("No Filters Added. Please add at least one filter")
             return
         self.label_error.configure(text='')
+        # init a query from the selected table
         queryText = "SELECT * FROM " + self.selectedItem.get() + " \nWHERE "
         for index, query in enumerate(self.queries_list):
-            if query.selectedItemQuery.get() == 'Select Attribute':
-                self.error_msg("No Filter selected in filter " + str(index + 1))
+            # checking if the user select an attribute, if he didnt, a msg will appear to the user.
+            if query.selected_attribute.get() == 'Select Attribute':
+                self.error_msg("Attribute " + str(index + 1) + " Not Selected")
                 return
-            type = self.dict_headers_types[query.selectedItemQuery.get()]
-            if self.check_input(type, query, index):
+            if query.selected_filter_type.get() == 'Select Filter':
+                print("hei")
+                self.error_msg("Filter " + str(index + 1) + " Not Selected")
                 return
-            queryText += query.selectedItemQuery.get() + " "
-            if query.selected_type_filter.get() == 'is between':
+            # taking the input type (INT, DATE, CHAR..)
+            type = self.dict_headers_types[query.selected_attribute.get()]
+            # checking the input by the matched type
+            if not self.check_input(type, query, index):
+                return
+
+            queryText += query.selected_attribute.get() + " "
+            # if the user choose between option we need to take both of the inputs from the user
+            if query.selected_filter_type.get() == 'is between':
                 queryText += "between " + \
                              query.text_input.get().replace(" ", "") + " AND " + query.text_input_2.get().replace(" ",
                                                                                                                   "")
             else:
-                queryText += self.dict_attri_to_sign[query.selected_type_filter.get()]
+                # assign the right sign from the selected filter type ( example: is equal --> ==)
+                queryText += self.dict_attri_to_sign[query.selected_filter_type.get()]
             if 'DATETIME' in type:
-                if query.selected_type_filter.get() in ('before', 'after'):
+                # if the selected filter option is before or after we need to take the date as is.
+                if query.selected_filter_type.get() in ('before', 'after'):
                     queryText += '"' + str(query.date_entry.get_date()) + '"'
-                elif query.selected_type_filter.get() in 'between':
-                    queryText = queryText.replace('#', str(query.selectedItemQuery.get()), 2)
+                # if its between, we need to make the query for example: Date > date1 AND Date < date2
+                elif query.selected_filter_type.get() in 'between':
+                    queryText = queryText.replace('#', str(query.selected_attribute.get()), 2)
                     queryText = queryText.replace('^2', str(query.date_entry_2.get_date()), 2)
                     queryText = queryText.replace('^1', str(query.date_entry.get_date()), 2)
+                # if the user chose any other other option we need to replace only the hashtags.
                 else:
-                    queryText = queryText.replace('#', str(query.selectedItemQuery.get()), 2)
+                    queryText = queryText.replace('#', str(query.selected_attribute.get()), 2)
             elif 'CHAR' in type:
+                # if the user didnt insert any input the default will be Null
                 if len(query.text_input.get().replace(" ", "")) == 0:
                     queryText = queryText.replace('#', 'NULL')
                     queryText = queryText.replace('=', 'is')
@@ -383,39 +406,33 @@ class App:
                 queryText = queryText.replace('#', str(query.text_input.get().replace(" ", "")))
             else:
                 queryText = queryText.replace('#', str(query.text_input.get().replace(" ", "")))
+            # adding AND between each row from the filters to make the query legit
             if (index + 1) < len(self.queries_list) and len(self.queries_list) > 1:
                 queryText += '\nAND '
         queryText += ";"
         print(queryText)
+        # executing the query
         self.data_query(len(self.dict_headers_types), queryText)
 
-    def data_query(self, headers_length, Q):
+    # initialize the query from the input
+    # input: length of the dictionary of headers names and the query from user
+    # output: executing the table by the query input
+    def data_query(self, headers_length, input_query):
         for x in self.tree.get_children():
             self.tree.delete(x)
-        self.mycursor.execute(Q)
+        self.mycursor.execute(input_query)
         for row in self.mycursor:
             self.tree.insert('', 'end', values=row[0:headers_length])
 
-    def data(self, headers_length):
+    # initialize the table by the user choice
+    # input: length of the dictionary of headers names
+    # output: executing and showing the right table by the user choice
+    def execute_selected_table(self, headers_length):
         for x in self.tree.get_children():
             self.tree.delete(x)
         self.mycursor.execute("SELECT *  FROM " + self.selectedItem.get())
         for row in self.mycursor:
             self.tree.insert('', 'end', values=row[0:headers_length])
-
-    # setting theme color
-    def change_theme(self):
-        if self.switch_is_on is True:
-            # Set light theme
-            self.root.tk.call("set_theme", "light")
-            self.switch.configure(text="Light Mode")
-            self.switch_is_on = False
-
-        else:
-            # Set dark theme
-            self.root.tk.call("set_theme", "dark")
-            self.switch.configure(text="Dark Mode")
-            self.switch_is_on = True
 
     # initialize the date picker
     # input: the query data
@@ -427,9 +444,10 @@ class App:
         query.date_entry.grid_forget()
         query.date_entry_2.grid_forget()
 
-        selected_filter = query.selected_type_filter.get()
+        selected_filter = query.selected_filter_type.get()
         query.menu_btn_filter.configure(text=selected_filter)
-        if selected_filter in ('between'):
+        # if the user chose the between option we need to add another input and label.
+        if selected_filter in 'between':
             query.init_date(self.frameQueries)
             query.date_entry.grid(row=query.index, column=5, pady=10, padx=10)
             query.label_between_to = ttk.Label(self.frameQueries, text='to')
@@ -438,71 +456,6 @@ class App:
         if selected_filter in ('before', 'after'):
             query.init_date(self.frameQueries)
             query.date_entry.grid(row=query.index, column=5, pady=10, padx=10)
-
-    # call to change error label text
-    # input: string
-    # output: None
-    def error_msg(self, msg):
-        self.label_error.configure(text=msg, fg='red')
-
-    # initialize error frame
-    def init_error_frame(self):
-        self.frame_error = Frame(self.root)
-        self.frame_error.pack(side=BOTTOM, pady=25)
-        self.label_error = Label(self.frame_error)
-        self.label_error.pack()
-
-    # checking if the input we get is correct
-    # getting type of input, the query data to get input, and index of the filter
-    # returns True for bad input, False for good input
-    def check_input(self, type, query, index):
-        if 'DATETIME' in type:
-            if query.date_entry.get_date() > date.today():
-                self.error_msg("Wrong Date in filter number " + str(index + 1))
-                return True
-            if query.selected_type_filter.get() in 'between':
-                if query.date_entry.get_date() > date.today() or query.date_entry_2.get_date() > date.today() \
-                        or query.date_entry.get_date() > query.date_entry_2.get_date():
-                    self.error_msg("Wrong Date in filter number " + str(index + 1))
-                    return True
-        if 'INTEGER' in type:
-            input_int = query.text_input.get().replace(" ", "")
-            input_int_2 = query.text_input_2.get().replace(" ", "")
-            if len(input_int) == 0:
-                self.error_msg("no input in filter " + str(index + 1))
-                return True
-            if not input_int.isdigit():
-                self.error_msg("Only numbers allowed in filter " + str(index + 1))
-                return True
-            if query.selected_type_filter.get() in ('is between', 'is not between'):
-                if len(input_int_2) == 0:
-                    self.error_msg("no input in filter " + str(index + 1))
-                    return True
-                if not input_int_2.isdigit():
-                    self.error_msg("Only numbers allowed in filter " + str(index + 1))
-                    return True
-        if 'NUMERIC' in type:
-            input_numeric = query.text_input.get().replace(" ", "")
-            input_numeric_2 = query.text_input_2.get().replace(" ", "")
-            if len(input_numeric) == 0:
-                self.error_msg("no input in filter " + str(index + 1))
-                return True
-            if not is_float(input_numeric):
-                self.error_msg("Only numbers or float allowed in filter " + str(index + 1))
-                return True
-            if query.selected_type_filter.get() in ('is between', 'is not between'):
-                if len(input_numeric_2) == 0:
-                    self.error_msg("no input in filter " + str(index + 1))
-                    return True
-                if not is_float(input_numeric_2):
-                    self.error_msg("Only numbers or float allowed in filter " + str(index + 1))
-                    return True
-        if 'CHAR' in type and query.selected_type_filter.get() != 'is equal to':
-            input_char = query.text_input.get().replace(" ", "")
-            if len(input_char) == 0:
-                self.error_msg("no input in filter " + str(index + 1))
-                return True
-        return False
 
     # removes filter line
     # input: query data
@@ -519,7 +472,109 @@ class App:
         query.date_entry.grid_forget()
         query.date_entry_2.grid_forget()
         query.label_between_to.grid_forget()
-        self.submit()
+
+    # checking if the input we get is correct
+    # getting type of input, the query data to get input, and index of the filter
+    # returns True for bad input, False for good input
+    def check_input(self, type, query, index):
+        if 'DATETIME' in type:
+            return self.check_input_date(query, index)
+        if 'INTEGER' in type:
+            print(self.check_input_int(query, index))
+            return self.check_input_int(query, index)
+        if 'NUMERIC' in type:
+            return self.check_input_numeric(query, index)
+        if 'CHAR' in type and query.selected_filter_type.get() != 'is equal to':
+            input_char = query.text_input.get().replace(" ", "")
+            if len(input_char) == 0:
+                self.error_msg("no input in filter " + str(index + 1))
+                return False
+            return True
+
+    # call to check input integer
+    # input: query and query index in queries list
+    # output: false\true depends on input
+    def check_input_int(self, query, index):
+        input_int = query.text_input.get().replace(" ", "")
+        input_int_2 = query.text_input_2.get().replace(" ", "")
+        if len(input_int) == 0:
+            self.error_msg("no input in filter " + str(index + 1))
+            return False
+        if not input_int.isdigit():
+            self.error_msg("Only numbers allowed in filter " + str(index + 1))
+            return False
+        if query.selected_filter_type.get() in ('is between', 'is not between'):
+            if len(input_int_2) == 0:
+                self.error_msg("no input in filter " + str(index + 1))
+                return False
+            if not input_int_2.isdigit():
+                self.error_msg("Only numbers allowed in filter " + str(index + 1))
+                return False
+        return True
+
+    # call to check input date
+    # input: query and query index in queries list
+    # output: false\true depends on input
+    def check_input_date(self, query, index):
+        if query.date_entry.get_date() > date.today():
+            self.error_msg("Wrong Date in filter number " + str(index + 1))
+            return False
+        if query.selected_filter_type.get() in 'between':
+            if query.date_entry.get_date() > date.today() or query.date_entry_2.get_date() > date.today() \
+                    or query.date_entry.get_date() > query.date_entry_2.get_date():
+                self.error_msg("Wrong Date in filter number " + str(index + 1))
+                return False
+        return True
+
+    # call to check input numeric
+    # input: query and query index in queries list
+    # output: false\true depends on input
+    def check_input_numeric(self, query, index):
+        input_numeric = query.text_input.get().replace(" ", "")
+        input_numeric_2 = query.text_input_2.get().replace(" ", "")
+        if len(input_numeric) == 0:
+            self.error_msg("no input in filter " + str(index + 1))
+            return False
+        if not is_float(input_numeric):
+            self.error_msg("Only numbers or float allowed in filter " + str(index + 1))
+            return False
+        if query.selected_filter_type.get() in ('is between', 'is not between'):
+            if len(input_numeric_2) == 0:
+                self.error_msg("no input in filter " + str(index + 1))
+                return False
+            if not is_float(input_numeric_2):
+                self.error_msg("Only numbers or float allowed in filter " + str(index + 1))
+                return False
+        return True
+
+    # call to change error label text
+    # input: string
+    # output: None
+    def error_msg(self, msg):
+        self.label_error.configure(text=msg, fg='red')
+
+    # initialize error frame
+    def init_error_frame(self):
+        self.frame_error = Frame(self.root)
+        self.frame_error.pack(side=BOTTOM, pady=25)
+        self.label_error = Label(self.frame_error)
+        self.label_error.pack()
+
+        # setting theme color
+
+    def change_theme(self):
+        if self.switch_is_on is True:
+            # Set light theme
+            self.root.tk.call("set_theme", "light")
+            self.switch.configure(text="Light Mode")
+            self.switch_is_on = False
+
+        else:
+            # Set dark theme
+            self.root.tk.call("set_theme", "dark")
+            self.switch.configure(text="Dark Mode")
+            self.switch_is_on = True
+
 
 # calling the App
 def main():
