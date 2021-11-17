@@ -10,7 +10,17 @@ pendulum.week_starts_at(pendulum.SUNDAY)
 pendulum.week_ends_at(pendulum.SATURDAY)
 
 
-class Query:
+# checking if value sent is float or not
+# returns True or False
+def is_float(value):
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
+
+
+class Filter:
     def __init__(self, index, frame):
         self.index = index
 
@@ -39,7 +49,7 @@ class Query:
         self.text_input_2 = None
         self.date_entry = None
         self.date_entry_2 = None
-        self.init_filter(frame)
+        self.init_filter_widgets(frame)
         self.init_text_input(frame)
         self.init_date(frame)
 
@@ -47,7 +57,7 @@ class Query:
         self.date_entry = DateEntry(frame, selectmode='day', date_pattern='dd/MM/yyyy')
         self.date_entry_2 = DateEntry(frame, selectmode='day', date_pattern='dd/MM/yyyy')
 
-    def init_filter(self, frame):
+    def init_filter_widgets(self, frame):
         self.selected_filter_type = StringVar()
         self.selected_filter_type.set('Select Filter')
 
@@ -61,16 +71,6 @@ class Query:
         self.text_input = ttk.Entry(frame)
         self.text_input_2 = ttk.Entry(frame)
         self.label_between_to = ttk.Entry(frame)
-
-
-# checking if value sent is float or not
-# returns True or False
-def is_float(value):
-    try:
-        float(value)
-        return True
-    except ValueError:
-        return False
 
 
 class App:
@@ -119,114 +119,137 @@ class App:
                                                 + str(pendulum.now().date()) + '"', 'before': '< ', 'after': '> ',
                                    'between': '> "^1" AND # < "^2"'}
 
-        # init queries list
-        self.queries_list = []
-        self.count_queries = 0
+        # init queries list that will contains all the queries that the user entered.
+        self.query_filter_list = []
+        self.count_query_filter = 0
 
         self.init_frame_header()
-        self.switch = ttk.Checkbutton(self.frameHeader, text="Light Mode", style="Switch.TCheckbutton",
+        # switch button for change theme (dark or light)
+        self.switch = ttk.Checkbutton(self.frame_header, text="Light Mode", style="Switch.TCheckbutton",
                                       command=self.change_theme)
         self.switch.grid(row=0, column=2, padx=25)
         self.switch_is_on = False
+        # init the frame for the table
         self.init_frame_table()
+        # init the frame for middle section that contains add filter and submit buttons.
+        self.frame_middle = Frame(self.root, height=10, width=300)
 
-        self.frameMiddle = Frame(self.root, height=10, width=300)
-
+        # init the frame that contains all the filters and the query.
         self.init_frame_query()
-
+        # init the footer frame that containt the exit and clear buttons.
         self.init_frame_footer()
+        # init the frame that will contains the error label.
         self.init_error_frame()
 
         self.root.mainloop()
 
+    # call to init the header frame
+    # input: None
+    # output: inserting to frame
     def init_frame_header(self):
-        self.frameHeader = Frame(self.root, height=150, width=300)
-        self.frameHeader.pack(pady=25, padx=50)
+        self.frame_header = Frame(self.root, height=150, width=300)
+        self.frame_header.pack(pady=25, padx=50)
 
-        self.selectedItem = StringVar()
-        self.selectedItem.set('Select Table')
+        self.selected_table_name = StringVar()
+        self.selected_table_name.set('Select Table')
         self.mycursor.execute(
             "SELECT name "
             "FROM sqlite_master "
             "WHERE type='table';")
-
+        # taking the tables names from the database
         self.databases_tup = tuple(x[0] for x in self.mycursor.fetchall())
 
-        self.init_btn()
-        self.label_select_table = Label(self.frameHeader, text="Table: ")
-        self.label_select_table.grid(row=0, column=0)
+        self.init_btn_labels_headers()
+        # adding buttons with all the names of tables.
         for db_name in self.databases_tup:
-            self.menu.add_radiobutton(
+            self.menu_select_table.add_radiobutton(
                 label=db_name,
-                variable=self.selectedItem,
+                variable=self.selected_table_name,
                 value=db_name,
                 command=self.init_selected_table
             )
 
+    # call to init labels and buttons for header frame
+    # input: None
+    # output: inserting labels,menu and button to header frame.
+    def init_btn_labels_headers(self):
+        self.menu_select_table_btn = ttk.Menubutton(self.frame_header, text=self.selected_table_name.get())
+        self.menu_select_table = Menu(self.menu_select_table_btn, tearoff=0)
+        self.menu_select_table_btn["menu"] = self.menu_select_table
+        self.label_select_table = Label(self.frame_header, text="Table: ")
+        self.label_select_table.grid(row=0, column=0)
+        self.menu_select_table_btn.grid(row=0, column=1)
+
+    # call to init query frame
+    # input: None
+    # output: inserting frame container for canvas that contains frame for the filters
     def init_frame_query(self):
-        self.frameQueriesMain = LabelFrame(self.root)
-        self.mycanvas = Canvas(self.frameQueriesMain, scrollregion=(0, 0, 1000, 500))
-        self.yscrollbar = ttk.Scrollbar(self.frameQueriesMain, orient=VERTICAL, command=self.mycanvas.yview)
-        self.xscrollbar = ttk.Scrollbar(self.frameQueriesMain, orient=HORIZONTAL, command=self.mycanvas.xview)
-        self.yscrollbar.pack(side=RIGHT, fill=Y)
-        self.xscrollbar.pack(side=BOTTOM, fill=X)
-        self.mycanvas.pack(fill=BOTH)
-        self.mycanvas.configure(yscrollcommand=self.yscrollbar.set, xscrollcommand=self.xscrollbar.set)
-        self.frameQueries = Frame(self.mycanvas)
-        self.frameQueries.pack()
-        self.mycanvas.create_window((0, 0), anchor='nw', window=self.frameQueries)
-        self.mycanvas.bind('<MouseWheel>', lambda x: self.mycanvas.yview_scroll(int(-1 * (x.delta / 120)), "units"))
-        self.frameQueries.bind('<MouseWheel>', lambda x: self.mycanvas.yview_scroll(int(-1 * (x.delta / 120)), "units"))
-        self.frameQueriesMain.bind('<MouseWheel>',
-                                   lambda x: self.mycanvas.yview_scroll(int(-1 * (x.delta / 120)), "units"))
+        self.frame_query_container = LabelFrame(self.root)
+        self.canvas = Canvas(self.frame_query_container, scrollregion=(0, 0, 1000, 500))
+        self.y_scrollbar_query_frame = ttk.Scrollbar(self.frame_query_container, orient=VERTICAL,
+                                                     command=self.canvas.yview)
+        self.x_scrollbar_query_frame = ttk.Scrollbar(self.frame_query_container, orient=HORIZONTAL,
+                                                     command=self.canvas.xview)
+        self.y_scrollbar_query_frame.pack(side=RIGHT, fill=Y)
+        self.x_scrollbar_query_frame.pack(side=BOTTOM, fill=X)
+        self.canvas.pack(fill=BOTH)
+        self.canvas.configure(yscrollcommand=self.y_scrollbar_query_frame.set,
+                              xscrollcommand=self.x_scrollbar_query_frame.set)
+        self.frame_query_filters = Frame(self.canvas)
+        self.frame_query_filters.pack()
+        self.canvas.create_window((0, 0), anchor='nw', window=self.frame_query_filters)
+        # enable scroll with mouse at all point inside the frame
+        self.canvas.bind('<MouseWheel>', lambda x: self.canvas.yview_scroll(int(-1 * (x.delta / 120)), "units"))
+        self.frame_query_filters.bind('<MouseWheel>',
+                                      lambda x: self.canvas.yview_scroll(int(-1 * (x.delta / 120)), "units"))
+        self.frame_query_container.bind('<MouseWheel>',
+                                        lambda x: self.canvas.yview_scroll(int(-1 * (x.delta / 120)), "units"))
 
-    def init_btn(self):
-        self.menu_btn = ttk.Menubutton(self.frameHeader, text=self.selectedItem.get())
-        self.menu = Menu(self.menu_btn, tearoff=0)
-        self.menu_btn["menu"] = self.menu
-        self.menu_btn.grid(row=0, column=1)
-
+    # call to init table frame
+    # input: None
+    # output: inserting frame that contains tree view for the table
     def init_frame_table(self):
-        self.frameTable = Frame(self.root)
-        self.tree = ttk.Treeview(self.frameTable, height=7, show="headings")
-        self.frameTable.configure(height=200)
-        self.y_scrollbar = Scrollbar(self.frameTable, orient=VERTICAL, command=self.tree.yview)
-        self.x_scrollbar = Scrollbar(self.frameTable, orient=HORIZONTAL, command=self.tree.xview)
+        self.frame_table = Frame(self.root)
+        self.tree_view_table = ttk.Treeview(self.frame_table, height=7, show="headings")
+        self.frame_table.configure(height=200)
+        self.y_scrollbar_tree_table = Scrollbar(self.frame_table, orient=VERTICAL, command=self.tree_view_table.yview)
+        self.x_scrollbar_tree_table = Scrollbar(self.frame_table, orient=HORIZONTAL, command=self.tree_view_table.xview)
+        self.tree_view_table.configure(yscrollcommand=self.y_scrollbar_tree_table.set,
+                                       xscrollcommand=self.x_scrollbar_tree_table.set)
+        self.y_scrollbar_tree_table.pack(side=RIGHT, fill=Y)
+        self.x_scrollbar_tree_table.pack(side=BOTTOM, fill=X)
+        self.tree_view_table.pack(fill=X)
 
-        self.tree.configure(yscrollcommand=self.y_scrollbar.set, xscrollcommand=self.x_scrollbar.set)
-        self.y_scrollbar.pack(side=RIGHT, fill=Y)
-        self.x_scrollbar.pack(side=BOTTOM, fill=X)
-
-        self.tree.pack(fill=X)
-
+    # call to init footer frame
+    # input: None
+    # output: inserting frame that contains exit and clear buttons.
     def init_frame_footer(self):
         # init the footer frame and packing it
-        self.frameFooter = Frame(self.root, height=150, width=300)
-        self.frameFooter.pack(side=BOTTOM, pady=25)
-
+        self.frame_footer = Frame(self.root, height=150, width=300)
+        self.frame_footer.pack(side=BOTTOM, pady=25)
         # define exit and clear buttons
-        self.exit_btn = ttk.Button(self.frameFooter, text="Exit", style="Accent.TButton",
+        self.exit_btn = ttk.Button(self.frame_footer, text="Exit", style="Accent.TButton",
                                    command=lambda: self.root.destroy())
-        # self.exit_btn['font'] = self.btnFont
         self.exit_btn.grid(row=0, column=0, padx=25)
-
-        self.clr_btn = ttk.Button(self.frameFooter, text="Clear", style="Accent.TButton", command=self.clear)
+        self.clr_btn = ttk.Button(self.frame_footer, text="Clear", style="Accent.TButton", command=self.clear)
         self.clr_btn.grid(row=0, column=1, padx=25)
 
+    # call to init the selected table
+    # input: None
+    # output: removing any table that was initiated before and inserting the current table to tree from the selected table.
     def init_selected_table(self):
-        self.count_queries = 0
-        self.frameTable.pack(padx=100, fill=X)
+        self.count_query_filter = 0
+        self.frame_table.pack(padx=100, fill=X)
         # clearing the list each table selection
-        self.queries_list.clear()
+        self.query_filter_list.clear()
         # clear queries frame
-        for child in self.frameMiddle.winfo_children():
+        for child in self.frame_middle.winfo_children():
             child.destroy()
-        for child in self.frameQueries.winfo_children():
+        for child in self.frame_query_filters.winfo_children():
             child.destroy()
-        self.frameMiddle.pack(pady=5, padx=50)
-        self.frameQueriesMain.pack(pady=10, padx=10, expand=YES, fill=BOTH)
-        selectedTableName = self.selectedItem.get()
-        self.mycursor.execute("PRAGMA table_info(" + selectedTableName + ")")
+        self.frame_middle.pack(pady=5, padx=50)
+        self.frame_query_container.pack(pady=10, padx=10, expand=YES, fill=BOTH)
+        self.mycursor.execute("PRAGMA table_info(" + self.selected_table_name.get() + ")")
         # list of tuple that contains header name and type.
         headers_type_tup = list(map(lambda x: (x[1], x[2]), self.mycursor.fetchall()))
         # list of the header's name
@@ -236,118 +259,127 @@ class App:
         length_headers = len(headers)
         # configure the tuple columns from headers.
         h_tuple = tuple((x + 1 for x in range(length_headers)))
-        self.tree.configure(columns=h_tuple)
+        self.tree_view_table.configure(columns=h_tuple)
         # creating headers with header name
         for index, value in enumerate(headers):
             # self.insertQueries(index, value)
-            self.tree.heading(index + 1, text=value, anchor='nw')
-            self.tree.column(index + 1, stretch=YES, width=250)
+            self.tree_view_table.heading(index + 1, text=value, anchor='nw')
+            self.tree_view_table.column(index + 1, stretch=YES, width=250)
         # define add button for adding new query
-        add_query_btn = ttk.Button(self.frameMiddle, text="Add Filter", command=self.add_query)
+        add_query_btn = ttk.Button(self.frame_middle, text="Add Filter", command=self.add_filter)
         add_query_btn.grid(row=0, column=0, padx=10, pady=15)
         # define submit button for the current query
-        submit_btn = ttk.Button(self.frameMiddle, text="Submit", command=self.submit)
+        submit_btn = ttk.Button(self.frame_middle, text="Submit", command=self.submit)
         submit_btn.grid(row=0, column=1, padx=10, pady=15)
 
         self.execute_selected_table(length_headers)
-        self.menu_btn.configure(text=selectedTableName)
+        self.menu_select_table_btn.configure(text=self.selected_table_name.get())
 
-    def add_query(self):
+    # call to add new filter after the user pressed the button
+    # input: None
+    # output: inserting new filter 'row' that contains attribute menu and appending new filter to the list of filters.
+    def add_filter(self):
 
-        # new query object that contain a menu for attribute and menu for the right filter menu by the attribute type.
-        new_query = Query(self.count_queries, self.frameQueries)
-        self.count_queries += 1
-        new_query.remove_button.configure(command=lambda: self.remove_filter(new_query))
+        # new filter object that contain a menu for attribute and menu for the right filter menu by the attribute type.
+        new_filter = Filter(self.count_query_filter, self.frame_query_filters)
+        self.count_query_filter += 1
+        new_filter.remove_button.configure(command=lambda: self.remove_filter(new_filter))
 
         for header_name, header_type in self.dict_headers_types.items():
-            new_query.menu_attribute.add_radiobutton(
+            new_filter.menu_attribute.add_radiobutton(
                 label=header_name,
-                variable=new_query.selected_attribute,
+                variable=new_filter.selected_attribute,
                 value=header_name,
-                command=lambda: self.init_query(new_query)
+                command=lambda: self.init_filter(new_filter)
             )
 
-        # array of all queries
-        self.queries_list.append(new_query)
+        # array of all filters
+        self.query_filter_list.append(new_filter)
         self.error_msg("")
 
-    def init_query(self, query):
+    # call to initialize the menu filter
+    # input: the selected filter
+    # output: inserting the relevant menu list by the type
+    def init_filter(self, filter):
         # each time the user select query attribute, the recent filter will be removed and a new one will be added.
-        query.label_select_filter.grid_forget()
-        query.menu_btn_filter.grid_forget()
-        query.text_input.grid_forget()
-        query.label_between_to.grid_forget()
-        query.text_input_2.grid_forget()
+        filter.label_select_filter.grid_forget()
+        filter.menu_btn_filter.grid_forget()
+        filter.text_input.grid_forget()
+        filter.label_between_to.grid_forget()
+        filter.text_input_2.grid_forget()
 
-        query.init_filter(self.frameQueries)
+        filter.init_filter_widgets(self.frame_query_filters)
 
-        selected_item_query = query.selected_attribute.get()
-        query.menu_btn_attribute.configure(text=selected_item_query)
+        filter.menu_btn_attribute.configure(text=filter.selected_attribute.get())
 
         # adding label and menu filter for the selected query attribute
-        query.label_select_filter.grid(row=query.index, column=3, pady=5)
-        query.menu_btn_filter.grid(row=query.index, column=4, pady=5)
+        filter.label_select_filter.grid(row=filter.index, column=3, pady=5)
+        filter.menu_btn_filter.grid(row=filter.index, column=4, pady=5)
 
-        header_type = self.dict_headers_types[selected_item_query]
+        header_type = self.dict_headers_types[filter.selected_attribute.get()]
 
+        # each condition is responsible for taking the relevant dictionary of filters by the filter type.
         if 'CHAR' in header_type:
             for label in self.filters_char:
-                query.menu_filter.add_radiobutton(
+                filter.menu_filter.add_radiobutton(
                     label=label,
-                    variable=query.selected_filter_type,
+                    variable=filter.selected_filter_type,
                     value=label,
-                    command=lambda: self.init_filter(query)
+                    command=lambda: self.init_filter_input(filter)
                 )
             return
         if 'DATETIME' in header_type:
             for label in self.filters_date:
-                query.menu_filter.add_radiobutton(
+                filter.menu_filter.add_radiobutton(
                     label=label,
-                    variable=query.selected_filter_type,
+                    variable=filter.selected_filter_type,
                     value=label,
-                    command=lambda: self.init_filter_date(query)
+                    command=lambda: self.init_filter_date(filter)
                 )
             return
         elif 'INTEGER' or 'NUMERIC' in header_type:
             for label in self.filters_int_or_numeric:
-                query.menu_filter.add_radiobutton(
+                filter.menu_filter.add_radiobutton(
                     label=label,
-                    variable=query.selected_filter_type,
+                    variable=filter.selected_filter_type,
                     value=label,
-                    command=lambda: self.init_filter(query)
+                    command=lambda: self.init_filter_input(filter)
                 )
 
-    def init_filter(self, query):
+    # call to initialize all relevant inputs for the current filter
+    # input: the selected filter
+    # output: removing previous inputs and inserting to frame the new inputs fields.
+    def init_filter_input(self, filter):
         # each time we select a filter we need to remove the last inputs by the type and initializing them again
-        query.text_input.grid_forget()
-        query.label_between_to.grid_forget()
-        query.text_input_2.grid_forget()
-        query.date_entry.grid_forget()
-        query.date_entry_2.grid_forget()
+        filter.text_input.grid_forget()
+        filter.label_between_to.grid_forget()
+        filter.text_input_2.grid_forget()
+        filter.date_entry.grid_forget()
+        filter.date_entry_2.grid_forget()
 
-        selected_filter = query.selected_filter_type.get()
-        query.menu_btn_filter.configure(text=selected_filter)
-        query.init_text_input(self.frameQueries)
-        query.text_input.grid(row=query.index, column=5, pady=10, padx=10)
+        selected_filter = filter.selected_filter_type.get()
+        filter.menu_btn_filter.configure(text=selected_filter)
+        filter.init_text_input(self.frame_query_filters)
+        filter.text_input.grid(row=filter.index, column=5, pady=10, padx=10)
         if selected_filter in ('is between', 'is not between'):
-            query.label_between_to = ttk.Label(self.frameQueries, text='to')
-            query.label_between_to.grid(row=query.index, column=6, pady=10, padx=5)
-            query.text_input_2.grid(row=query.index, column=7, pady=10, padx=10)
+            filter.label_between_to = ttk.Label(self.frame_query_filters, text='to')
+            filter.label_between_to.grid(row=filter.index, column=6, pady=10, padx=5)
+            filter.text_input_2.grid(row=filter.index, column=7, pady=10, padx=10)
 
     # call to clear all relevant frames, filters and queries
     # input: None
     # output: None
     def clear(self):
-        for x in self.tree.get_children():
-            self.tree.delete(x)
-        self.tree.configure(columns=())
-        self.frameTable.pack_forget()
-        self.queries_list.clear()
-        self.frameMiddle.pack_forget()
-        self.frameQueriesMain.pack_forget()
-        self.selectedItem.set('Select Table')
-        self.count_queries = 0
-        self.menu_btn.configure(text=self.selectedItem.get())
+        for x in self.tree_view_table.get_children():
+            self.tree_view_table.delete(x)
+        self.tree_view_table.configure(columns=())
+        self.frame_table.pack_forget()
+        self.query_filter_list.clear()
+        self.frame_middle.pack_forget()
+        self.frame_query_container.pack_forget()
+        self.selected_table_name.set('Select Table')
+        self.count_query_filter = 0
+        self.menu_select_table_btn.configure(text=self.selected_table_name.get())
         self.error_msg("")
 
     # call to submit the input by the user
@@ -355,13 +387,13 @@ class App:
     # output: None
     def submit(self):
         # if there is no filters added a message will appear to the user
-        if len(self.queries_list) == 0:
+        if len(self.query_filter_list) == 0:
             self.error_msg("No Filters Added. Please add at least one filter")
             return
         self.label_error.configure(text='')
         # init a query from the selected table
-        queryText = "SELECT * FROM " + self.selectedItem.get() + " \nWHERE "
-        for index, query in enumerate(self.queries_list):
+        queryText = "SELECT * FROM " + self.selected_table_name.get() + " \nWHERE "
+        for index, query in enumerate(self.query_filter_list):
             # checking if the user select an attribute, if he didnt, a msg will appear to the user.
             if query.selected_attribute.get() == 'Select Attribute':
                 self.error_msg("Attribute " + str(index + 1) + " Not Selected")
@@ -407,7 +439,7 @@ class App:
             else:
                 queryText = queryText.replace('#', str(query.text_input.get().replace(" ", "")))
             # adding AND between each row from the filters to make the query legit
-            if (index + 1) < len(self.queries_list) and len(self.queries_list) > 1:
+            if (index + 1) < len(self.query_filter_list) and len(self.query_filter_list) > 1:
                 queryText += '\nAND '
         queryText += ";"
         print(queryText)
@@ -418,21 +450,21 @@ class App:
     # input: length of the dictionary of headers names and the query from user
     # output: executing the table by the query input
     def data_query(self, headers_length, input_query):
-        for x in self.tree.get_children():
-            self.tree.delete(x)
+        for x in self.tree_view_table.get_children():
+            self.tree_view_table.delete(x)
         self.mycursor.execute(input_query)
         for row in self.mycursor:
-            self.tree.insert('', 'end', values=row[0:headers_length])
+            self.tree_view_table.insert('', 'end', values=row[0:headers_length])
 
     # initialize the table by the user choice
     # input: length of the dictionary of headers names
     # output: executing and showing the right table by the user choice
     def execute_selected_table(self, headers_length):
-        for x in self.tree.get_children():
-            self.tree.delete(x)
-        self.mycursor.execute("SELECT *  FROM " + self.selectedItem.get())
+        for x in self.tree_view_table.get_children():
+            self.tree_view_table.delete(x)
+        self.mycursor.execute("SELECT *  FROM " + self.selected_table_name.get())
         for row in self.mycursor:
-            self.tree.insert('', 'end', values=row[0:headers_length])
+            self.tree_view_table.insert('', 'end', values=row[0:headers_length])
 
     # initialize the date picker
     # input: the query data
@@ -448,20 +480,20 @@ class App:
         query.menu_btn_filter.configure(text=selected_filter)
         # if the user chose the between option we need to add another input and label.
         if selected_filter in 'between':
-            query.init_date(self.frameQueries)
+            query.init_date(self.frame_query_filters)
             query.date_entry.grid(row=query.index, column=5, pady=10, padx=10)
-            query.label_between_to = ttk.Label(self.frameQueries, text='to')
+            query.label_between_to = ttk.Label(self.frame_query_filters, text='to')
             query.label_between_to.grid(row=query.index, column=6, pady=10, padx=5)
             query.date_entry_2.grid(row=query.index, column=7, pady=10, padx=10)
         if selected_filter in ('before', 'after'):
-            query.init_date(self.frameQueries)
+            query.init_date(self.frame_query_filters)
             query.date_entry.grid(row=query.index, column=5, pady=10, padx=10)
 
     # removes filter line
     # input: query data
     # output: None
     def remove_filter(self, query):
-        self.queries_list.remove(query)
+        self.query_filter_list.remove(query)
         query.label_select_attribute.grid_forget()
         query.label_select_filter.grid_forget()
         query.menu_btn_attribute.grid_forget()
@@ -476,69 +508,69 @@ class App:
     # checking if the input we get is correct
     # getting type of input, the query data to get input, and index of the filter
     # returns True for bad input, False for good input
-    def check_input(self, type, query, index):
+    def check_input(self, type, filter, index):
         if 'DATETIME' in type:
-            return self.check_input_date(query, index)
+            return self.check_input_date(filter, index)
         if 'INTEGER' in type:
-            print(self.check_input_int(query, index))
-            return self.check_input_int(query, index)
+            print(self.check_input_int(filter, index))
+            return self.check_input_int(filter, index)
         if 'NUMERIC' in type:
-            return self.check_input_numeric(query, index)
-        if 'CHAR' in type and query.selected_filter_type.get() != 'is equal to':
-            input_char = query.text_input.get().replace(" ", "")
+            return self.check_input_numeric(filter, index)
+        if 'CHAR' in type and filter.selected_filter_type.get() != 'is equal to':
+            input_char = filter.text_input.get().replace(" ", "")
             if len(input_char) == 0:
-                self.error_msg("no input in filter " + str(index + 1))
+                self.error_msg("Please enter input for filter " + str(index + 1))
                 return False
             return True
 
     # call to check input integer
     # input: query and query index in queries list
     # output: false\true depends on input
-    def check_input_int(self, query, index):
-        input_int = query.text_input.get().replace(" ", "")
-        input_int_2 = query.text_input_2.get().replace(" ", "")
+    def check_input_int(self, filter, index):
+        input_int = filter.text_input.get().replace(" ", "")
+        input_int_2 = filter.text_input_2.get().replace(" ", "")
         if len(input_int) == 0:
-            self.error_msg("no input in filter " + str(index + 1))
+            self.error_msg("Please enter input for filter " + str(index + 1))
             return False
         if not input_int.isdigit():
-            self.error_msg("Only numbers allowed in filter " + str(index + 1))
+            self.error_msg("Please enter numbers only in filter " + str(index + 1))
             return False
-        if query.selected_filter_type.get() in ('is between', 'is not between'):
+        if filter.selected_filter_type.get() in ('is between', 'is not between'):
             if len(input_int_2) == 0:
-                self.error_msg("no input in filter " + str(index + 1))
+                self.error_msg("Please enter input for filter " + str(index + 1))
                 return False
             if not input_int_2.isdigit():
-                self.error_msg("Only numbers allowed in filter " + str(index + 1))
+                self.error_msg("Please enter numbers only in filter " + str(index + 1))
                 return False
         return True
 
     # call to check input date
     # input: query and query index in queries list
     # output: false\true depends on input
-    def check_input_date(self, query, index):
-        if query.date_entry.get_date() > date.today():
+    def check_input_date(self, filter, index):
+        if filter.date_entry.get_date() > date.today():
             self.error_msg("Wrong Date in filter number " + str(index + 1))
             return False
-        if query.selected_filter_type.get() in 'between':
-            if query.date_entry.get_date() > date.today() or query.date_entry_2.get_date() > date.today() \
-                    or query.date_entry.get_date() > query.date_entry_2.get_date():
-                self.error_msg("Wrong Date in filter number " + str(index + 1))
+        if filter.selected_filter_type.get() in 'between':
+            if filter.date_entry.get_date() > date.today() or filter.date_entry_2.get_date() > date.today() \
+                    or filter.date_entry.get_date() > filter.date_entry_2.get_date():
+                self.error_msg("Invalid date in filter " + str(index + 1))
                 return False
         return True
 
     # call to check input numeric
     # input: query and query index in queries list
     # output: false\true depends on input
-    def check_input_numeric(self, query, index):
-        input_numeric = query.text_input.get().replace(" ", "")
-        input_numeric_2 = query.text_input_2.get().replace(" ", "")
+    def check_input_numeric(self, filter, index):
+        input_numeric = filter.text_input.get().replace(" ", "")
+        input_numeric_2 = filter.text_input_2.get().replace(" ", "")
         if len(input_numeric) == 0:
             self.error_msg("no input in filter " + str(index + 1))
             return False
         if not is_float(input_numeric):
             self.error_msg("Only numbers or float allowed in filter " + str(index + 1))
             return False
-        if query.selected_filter_type.get() in ('is between', 'is not between'):
+        if filter.selected_filter_type.get() in ('is between', 'is not between'):
             if len(input_numeric_2) == 0:
                 self.error_msg("no input in filter " + str(index + 1))
                 return False
