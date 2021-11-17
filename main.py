@@ -399,7 +399,6 @@ class App:
                 self.error_msg("Attribute " + str(index + 1) + " Not Selected")
                 return
             if query.selected_filter_type.get() == 'Select Filter':
-                print("hei")
                 self.error_msg("Filter " + str(index + 1) + " Not Selected")
                 return
             # taking the input type (INT, DATE, CHAR..)
@@ -442,7 +441,6 @@ class App:
             if (index + 1) < len(self.query_filter_list) and len(self.query_filter_list) > 1:
                 queryText += '\nAND '
         queryText += ";"
-        print(queryText)
         # executing the query
         self.data_query(len(self.dict_headers_types), queryText)
 
@@ -504,6 +502,10 @@ class App:
         query.date_entry.grid_forget()
         query.date_entry_2.grid_forget()
         query.label_between_to.grid_forget()
+        if len(self.query_filter_list) == 0:
+            self.init_selected_table()
+        else:
+            self.submit()
 
     # checking if the input we get is correct
     # getting type of input, the query data to get input, and index of the filter
@@ -512,7 +514,6 @@ class App:
         if 'DATETIME' in type:
             return self.check_input_date(filter, index)
         if 'INTEGER' in type:
-            print(self.check_input_int(filter, index))
             return self.check_input_int(filter, index)
         if 'NUMERIC' in type:
             return self.check_input_numeric(filter, index)
