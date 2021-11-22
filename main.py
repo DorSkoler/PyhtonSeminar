@@ -88,7 +88,7 @@ class App:
 
         # init arrays for filters type queries
         self.filters_char = ['starts with', 'contains', 'is equal to', 'does not starts with', 'does not contain',
-                             'is not equal to']
+                             'is not equal to', 'is greater than', 'is less than', 'is less than or equal to', 'is greater than or equal to']
         self.filters_int_or_numeric = ['is equal to', 'is between', 'is less than', 'is less than or equal to',
                                        'is greater than',
                                        'is greater than or equal to',
@@ -97,10 +97,10 @@ class App:
                              'before', 'after', 'between']
 
         # dictionary for assigning label filter to the actual sign
-        self.dict_attri_to_sign = {'is equal to': '= \'#\'', 'is less than': '< #', 'is less than or equal to': '<= #',
-                                   'is greater than': '> "#"', 'is greater than or equal to': '>= #',
-                                   'is between': '< # AND $ > #',
-                                   'is not equal to': '!= #', 'starts with': 'LIKE \'#%\'', 'contains': 'LIKE \'%#%\'',
+        self.dict_attri_to_sign = {'is equal to': '= \'#\'', 'is less than': '< \'#\'', 'is less than or equal to': '<= \'#\'',
+                                   'is greater than': '> \'#\'', 'is greater than or equal to': '>= \'#\'',
+                                   'is between': '< \'#\' AND $ > \'#\'',
+                                   'is not equal to': '!= \'#\'', 'starts with': 'LIKE \'#%\'', 'contains': 'LIKE \'%#%\'',
                                    'does not starts with': 'NOT LIKE \'#%\'', 'does not contain': 'NOT LIKE \'%#%\'',
                                    'today': '= "' + str(date.today()) + ' 00:00:00"',
                                    'this year': '>= "' + str(date.today().year) + '-01-01" AND # < "'
@@ -406,7 +406,6 @@ class App:
             # checking the input by the matched type
             if not self.check_input(type, query, index):
                 return
-
             queryText += query.selected_attribute.get() + " "
             # if the user choose between option we need to take both of the inputs from the user
             if query.selected_filter_type.get() == 'is between':
@@ -432,15 +431,17 @@ class App:
                 # if the user didnt insert any input the default will be Null
                 if len(query.text_input.get().replace(" ", "")) == 0:
                     queryText = queryText.replace('#', 'NULL')
+                    queryText = queryText.replace('!=', 'is NOT')
                     queryText = queryText.replace('=', 'is')
                     queryText = queryText.replace('\'', '')
-                queryText = queryText.replace('#', str(query.text_input.get().replace(" ", "")))
+                queryText = queryText.replace('#', str(query.text_input.get().strip()))
             else:
                 queryText = queryText.replace('#', str(query.text_input.get().replace(" ", "")))
             # adding AND between each row from the filters to make the query legit
             if (index + 1) < len(self.query_filter_list) and len(self.query_filter_list) > 1:
                 queryText += '\nAND '
         queryText += ";"
+        print(queryText)
         # executing the query
         self.data_query(len(self.dict_headers_types), queryText)
 
@@ -464,10 +465,12 @@ class App:
         for row in self.mycursor:
             self.tree_view_table.insert('', 'end', values=row[0:headers_length])
 
-    # initialize the date picker
-    # input: the query data
-    # output: None
     def init_filter_date(self, query):
+        """
+        :param query: initialize the date picker
+        :param input: the query data
+        :return: None
+        """
         query.text_input.grid_forget()
         query.label_between_to.grid_forget()
         query.text_input_2.grid_forget()
@@ -517,12 +520,12 @@ class App:
             return self.check_input_int(filter, index)
         if 'NUMERIC' in type:
             return self.check_input_numeric(filter, index)
-        if 'CHAR' in type and filter.selected_filter_type.get() != 'is equal to':
+        if 'CHAR' in type and filter.selected_filter_type.get() != 'is equal to' and filter.selected_filter_type.get() != 'is not equal to':
             input_char = filter.text_input.get().replace(" ", "")
             if len(input_char) == 0:
                 self.error_msg("Please enter input for filter " + str(index + 1))
                 return False
-            return True
+        return True
 
     # call to check input integer
     # input: query and query index in queries list
@@ -543,6 +546,7 @@ class App:
             if not input_int_2.isdigit():
                 self.error_msg("Please enter numbers only in filter " + str(index + 1))
                 return False
+        print("here")
         return True
 
     # call to check input date
