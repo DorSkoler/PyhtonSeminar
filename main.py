@@ -290,6 +290,10 @@ class App:
         # define submit button for the current query
         submit_btn = ttk.Button(self.frame_middle, text="Submit", command=self.submit)
         submit_btn.grid(row=0, column=1, padx=10, pady=15)
+        # switch button for change theme (dark or light)
+        self.switch_2 = ttk.Checkbutton(self.frame_middle, text="Case sensetive", style="Switch.TCheckbutton")
+        self.switch_2.grid(row=0, column=2, padx=25)
+        self.switch_is_on_2 = False
 
         self.execute_selected_table(length_headers)
         self.menu_select_table_btn.configure(text=self.selected_table_name.get())
@@ -676,5 +680,6 @@ def main():
     :return: None
     """
     App('chinook.db')
+
 
 main()
