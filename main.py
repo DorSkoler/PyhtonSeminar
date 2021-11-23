@@ -10,9 +10,12 @@ pendulum.week_starts_at(pendulum.SUNDAY)
 pendulum.week_ends_at(pendulum.SATURDAY)
 
 
-# checking if value sent is float or not
-# returns True or False
 def is_float(value):
+    """
+    checking if value sent is float or not
+    :param value: anything
+    :return: returns True or False
+    """
     try:
         float(value)
         return True
@@ -75,6 +78,10 @@ class Filter:
 
 class App:
     def __init__(self, db):
+        """
+        initialize the window App
+        :param db: the database to import
+        """
         self.conn = sqlite3.connect(db)
         self.mycursor = self.conn.cursor()
         self.root = tk.Tk()
@@ -143,10 +150,12 @@ class App:
 
         self.root.mainloop()
 
-    # call to init the header frame
-    # input: None
-    # output: inserting to frame
     def init_frame_header(self):
+        """
+        call to init the header frame
+        input: None
+        :return: inserting to frame
+        """
         self.frame_header = Frame(self.root, height=150, width=300)
         self.frame_header.pack(pady=25, padx=50)
 
@@ -169,10 +178,12 @@ class App:
                 command=self.init_selected_table
             )
 
-    # call to init labels and buttons for header frame
-    # input: None
-    # output: inserting labels,menu and button to header frame.
     def init_btn_labels_headers(self):
+        """
+        call to init labels and buttons for header frame
+        input: None
+        :return: inserting labels,menu and button to header frame.
+        """
         self.menu_select_table_btn = ttk.Menubutton(self.frame_header, text=self.selected_table_name.get())
         self.menu_select_table = Menu(self.menu_select_table_btn, tearoff=0)
         self.menu_select_table_btn["menu"] = self.menu_select_table
@@ -180,10 +191,12 @@ class App:
         self.label_select_table.grid(row=0, column=0)
         self.menu_select_table_btn.grid(row=0, column=1)
 
-    # call to init query frame
-    # input: None
-    # output: inserting frame container for canvas that contains frame for the filters
     def init_frame_query(self):
+        """
+        call to init query frame
+        input: None
+        :return: inserting frame container for canvas that contains frame for the filters
+        """
         self.frame_query_container = LabelFrame(self.root)
         self.canvas = Canvas(self.frame_query_container, scrollregion=(0, 0, 1000, 500))
         self.y_scrollbar_query_frame = ttk.Scrollbar(self.frame_query_container, orient=VERTICAL,
@@ -205,10 +218,12 @@ class App:
         self.frame_query_container.bind('<MouseWheel>',
                                         lambda x: self.canvas.yview_scroll(int(-1 * (x.delta / 120)), "units"))
 
-    # call to init table frame
-    # input: None
-    # output: inserting frame that contains tree view for the table
     def init_frame_table(self):
+        """
+        call to init table frame
+        input: None
+        :return:  inserting frame that contains tree view for the table
+        """
         self.frame_table = Frame(self.root)
         self.tree_view_table = ttk.Treeview(self.frame_table, height=7, show="headings")
         self.frame_table.configure(height=200)
@@ -220,10 +235,12 @@ class App:
         self.x_scrollbar_tree_table.pack(side=BOTTOM, fill=X)
         self.tree_view_table.pack(fill=X)
 
-    # call to init footer frame
-    # input: None
-    # output: inserting frame that contains exit and clear buttons.
     def init_frame_footer(self):
+        """
+        call to init footer frame
+        input: None
+        :return: inserting frame that contains exit and clear buttons.
+        """
         # init the footer frame and packing it
         self.frame_footer = Frame(self.root, height=150, width=300)
         self.frame_footer.pack(side=BOTTOM, pady=25)
@@ -234,10 +251,12 @@ class App:
         self.clr_btn = ttk.Button(self.frame_footer, text="Clear", style="Accent.TButton", command=self.clear)
         self.clr_btn.grid(row=0, column=1, padx=25)
 
-    # call to init the selected table
-    # input: None
-    # output: removing any table that was initiated before and inserting the current table to tree from the selected table.
     def init_selected_table(self):
+        """
+        call to init the selected table
+        input: None
+        :return: removing any table that was initiated before and inserting the current table to tree from the selected table.
+        """
         self.count_query_filter = 0
         self.frame_table.pack(padx=100, fill=X)
         # clearing the list each table selection
@@ -275,11 +294,12 @@ class App:
         self.execute_selected_table(length_headers)
         self.menu_select_table_btn.configure(text=self.selected_table_name.get())
 
-    # call to add new filter after the user pressed the button
-    # input: None
-    # output: inserting new filter 'row' that contains attribute menu and appending new filter to the list of filters.
     def add_filter(self):
-
+        """
+        call to add new filter after the user pressed the button
+        input: None
+        :return: inserting new filter 'row' that contains attribute menu and appending new filter to the list of filters.
+        """
         # new filter object that contain a menu for attribute and menu for the right filter menu by the attribute type.
         new_filter = Filter(self.count_query_filter, self.frame_query_filters)
         self.count_query_filter += 1
@@ -297,10 +317,12 @@ class App:
         self.query_filter_list.append(new_filter)
         self.error_msg("")
 
-    # call to initialize the menu filter
-    # input: the selected filter
-    # output: inserting the relevant menu list by the type
     def init_filter(self, filter):
+        """
+        call to initialize the menu filter
+        :param filter: the selected filter
+        :return: inserting the relevant menu list by the type
+        """
         # each time the user select query attribute, the recent filter will be removed and a new one will be added.
         filter.label_select_filter.grid_forget()
         filter.menu_btn_filter.grid_forget()
@@ -346,10 +368,12 @@ class App:
                     command=lambda: self.init_filter_input(filter)
                 )
 
-    # call to initialize all relevant inputs for the current filter
-    # input: the selected filter
-    # output: removing previous inputs and inserting to frame the new inputs fields.
     def init_filter_input(self, filter):
+        """
+        call to initialize all relevant inputs for the current filter
+        :param filter: the selected filter
+        :return: removing previous inputs and inserting to frame the new inputs fields.
+        """
         # each time we select a filter we need to remove the last inputs by the type and initializing them again
         filter.text_input.grid_forget()
         filter.label_between_to.grid_forget()
@@ -366,10 +390,12 @@ class App:
             filter.label_between_to.grid(row=filter.index, column=6, pady=10, padx=5)
             filter.text_input_2.grid(row=filter.index, column=7, pady=10, padx=10)
 
-    # call to clear all relevant frames, filters and queries
-    # input: None
-    # output: None
     def clear(self):
+        """
+        call to clear all relevant frames, filters and queries
+        input: None
+        :return: None
+        """
         for x in self.tree_view_table.get_children():
             self.tree_view_table.delete(x)
         self.tree_view_table.configure(columns=())
@@ -382,10 +408,12 @@ class App:
         self.menu_select_table_btn.configure(text=self.selected_table_name.get())
         self.error_msg("")
 
-    # call to submit the input by the user
-    # input: string
-    # output: None
     def submit(self):
+        """
+        call to submit the input by the user
+        input: string
+        :return: None
+        """
         # if there is no filters added a message will appear to the user
         if len(self.query_filter_list) == 0:
             self.error_msg("No Filters Added. Please add at least one filter")
@@ -445,20 +473,25 @@ class App:
         # executing the query
         self.data_query(len(self.dict_headers_types), queryText)
 
-    # initialize the query from the input
-    # input: length of the dictionary of headers names and the query from user
-    # output: executing the table by the query input
     def data_query(self, headers_length, input_query):
+        """
+        initialize the query from the input
+        :param headers_length: length of the dictionary of headers names
+        :param input_query: the query from user
+        :return: executing the table by the query input
+        """
         for x in self.tree_view_table.get_children():
             self.tree_view_table.delete(x)
         self.mycursor.execute(input_query)
         for row in self.mycursor:
             self.tree_view_table.insert('', 'end', values=row[0:headers_length])
 
-    # initialize the table by the user choice
-    # input: length of the dictionary of headers names
-    # output: executing and showing the right table by the user choice
     def execute_selected_table(self, headers_length):
+        """
+        initialize the table by the user choice
+        :param headers_length: length of the dictionary of headers names
+        :return: executing and showing the right table by the user choice
+        """
         for x in self.tree_view_table.get_children():
             self.tree_view_table.delete(x)
         self.mycursor.execute("SELECT *  FROM " + self.selected_table_name.get())
@@ -490,10 +523,12 @@ class App:
             query.init_date(self.frame_query_filters)
             query.date_entry.grid(row=query.index, column=5, pady=10, padx=10)
 
-    # removes filter line
-    # input: query data
-    # output: None
     def remove_filter(self, query):
+        """
+        removes filter line
+        :param query: query data
+        :return: None
+        """
         self.query_filter_list.remove(query)
         query.label_select_attribute.grid_forget()
         query.label_select_filter.grid_forget()
@@ -510,10 +545,14 @@ class App:
         else:
             self.submit()
 
-    # checking if the input we get is correct
-    # getting type of input, the query data to get input, and index of the filter
-    # returns True for bad input, False for good input
     def check_input(self, type, filter, index):
+        """
+        checking if the input we get is correct
+        :param type: getting type of input
+        :param filter: the chosen filter data to get input
+        :param index: index of the filter
+        :return: returns True for good input, False for bad input
+        """
         if 'DATETIME' in type:
             return self.check_input_date(filter, index)
         if 'INTEGER' in type:
@@ -527,10 +566,13 @@ class App:
                 return False
         return True
 
-    # call to check input integer
-    # input: query and query index in queries list
-    # output: false\true depends on input
     def check_input_int(self, filter, index):
+        """
+        call to check input integer
+        :param filter: the chosen filter
+        :param index: query index in queries list
+        :return: false\true depends on input
+        """
         input_int = filter.text_input.get().replace(" ", "")
         input_int_2 = filter.text_input_2.get().replace(" ", "")
         if len(input_int) == 0:
@@ -549,10 +591,13 @@ class App:
         print("here")
         return True
 
-    # call to check input date
-    # input: query and query index in queries list
-    # output: false\true depends on input
     def check_input_date(self, filter, index):
+        """
+        call to check input date
+        :param filter: the chosen filter
+        :param index: filter index in queries list
+        :return: false\true depends on input
+        """
         if filter.date_entry.get_date() > date.today():
             self.error_msg("Wrong Date in filter number " + str(index + 1))
             return False
@@ -563,10 +608,13 @@ class App:
                 return False
         return True
 
-    # call to check input numeric
-    # input: query and query index in queries list
-    # output: false\true depends on input
     def check_input_numeric(self, filter, index):
+        """
+        call to check input numeric
+        :param filter: the chosen filter
+        :param index: filter index in queries list
+        return: false\true depends on input
+        """
         input_numeric = filter.text_input.get().replace(" ", "")
         input_numeric_2 = filter.text_input_2.get().replace(" ", "")
         if len(input_numeric) == 0:
@@ -584,14 +632,19 @@ class App:
                 return False
         return True
 
-    # call to change error label text
-    # input: string
-    # output: None
     def error_msg(self, msg):
+        """
+        call to change error label text
+        :param msg: string
+        :return: None
+        """
         self.label_error.configure(text=msg, fg='red')
 
-    # initialize error frame
     def init_error_frame(self):
+        """
+        initialize error frame
+        :return: None
+        """
         self.frame_error = Frame(self.root)
         self.frame_error.pack(side=BOTTOM, pady=25)
         self.label_error = Label(self.frame_error)
@@ -600,6 +653,10 @@ class App:
         # setting theme color
 
     def change_theme(self):
+        """
+        change the window theme
+        :return: None
+        """
         if self.switch_is_on is True:
             # Set light theme
             self.root.tk.call("set_theme", "light")
@@ -613,9 +670,11 @@ class App:
             self.switch_is_on = True
 
 
-# calling the App
 def main():
+    """
+    calls the App
+    :return: None
+    """
     App('chinook.db')
-
 
 main()
