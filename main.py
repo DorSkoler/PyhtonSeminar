@@ -25,6 +25,11 @@ def is_float(value):
 
 class Filter:
     def __init__(self, index, frame):
+        """
+        init filter class
+        :param index: index of filter in list
+        :param frame: frame query to add the filter
+        """
         self.index = index
 
         self.image = PhotoImage(file="trash.png")
@@ -57,10 +62,20 @@ class Filter:
         self.init_date(frame)
 
     def init_date(self, frame):
+        """
+        init date entries
+        :param frame: frame to add
+        :return: None
+        """
         self.date_entry = DateEntry(frame, selectmode='day', date_pattern='dd/MM/yyyy')
         self.date_entry_2 = DateEntry(frame, selectmode='day', date_pattern='dd/MM/yyyy')
 
     def init_filter_widgets(self, frame):
+        """
+        init filter selections
+        :param frame: frame to add
+        :return: None
+        """
         self.selected_filter_type = StringVar()
         self.selected_filter_type.set('Select Filter')
 
@@ -71,6 +86,11 @@ class Filter:
         self.label_select_filter = Label(frame, text="Filter: ")
 
     def init_text_input(self, frame):
+        """
+        init text entries
+        :param frame: frame to add
+        :return: None
+        """
         self.text_input = ttk.Entry(frame)
         self.text_input_2 = ttk.Entry(frame)
         self.label_between_to = ttk.Entry(frame)
@@ -283,17 +303,18 @@ class App:
         for index, value in enumerate(headers):
             # self.insertQueries(index, value)
             self.tree_view_table.heading(index + 1, text=value, anchor='nw')
-            self.tree_view_table.column(index + 1, stretch=YES, width=250)
+            self.tree_view_table.column(index + 1, stretch=YES, width=230)
         # define add button for adding new query
         add_query_btn = ttk.Button(self.frame_middle, text="Add Filter", command=self.add_filter)
         add_query_btn.grid(row=0, column=0, padx=10, pady=15)
         # define submit button for the current query
-        submit_btn = ttk.Button(self.frame_middle, text="Submit", command=self.submit)
+        self.button = ttk.Button(self.frame_middle, text="Submit", command=self.submit)
+        submit_btn = self.button
         submit_btn.grid(row=0, column=1, padx=10, pady=15)
-        # switch button for change theme (dark or light)
-        self.switch_2 = ttk.Checkbutton(self.frame_middle, text="Case sensetive", style="Switch.TCheckbutton")
-        self.switch_2.grid(row=0, column=2, padx=25)
-        self.switch_is_on_2 = False
+        # switch button for change Case sensitive
+        self.switch_case_letters = ttk.Checkbutton(self.frame_middle, text="Not Case Sensitive", style="Switch.TCheckbutton", command = self.change_case_sensitive)
+        self.switch_case_letters.grid(row=0, column=2, padx=25)
+        self.switch_is_on_case_letters = False
 
         self.execute_selected_table(length_headers)
         self.menu_select_table_btn.configure(text=self.selected_table_name.get())
@@ -424,6 +445,7 @@ class App:
             return
         self.label_error.configure(text='')
         # init a query from the selected table
+
         queryText = "SELECT * FROM " + self.selected_table_name.get() + " \nWHERE "
         for index, query in enumerate(self.query_filter_list):
             # checking if the user select an attribute, if he didnt, a msg will appear to the user.
@@ -466,6 +488,7 @@ class App:
                     queryText = queryText.replace('!=', 'is NOT')
                     queryText = queryText.replace('=', 'is')
                     queryText = queryText.replace('\'', '')
+                queryText = queryText.replace('=', 'LIKE')
                 queryText = queryText.replace('#', str(query.text_input.get().strip()))
             else:
                 queryText = queryText.replace('#', str(query.text_input.get().replace(" ", "")))
@@ -473,7 +496,10 @@ class App:
             if (index + 1) < len(self.query_filter_list) and len(self.query_filter_list) > 1:
                 queryText += '\nAND '
         queryText += ";"
-        print(queryText)
+        if self.switch_is_on_case_letters:
+            self.conn.execute("PRAGMA case_sensitive_like=TRUE;")
+        else:
+            self.conn.execute("PRAGMA case_sensitive_like=FALSE;")
         # executing the query
         self.data_query(len(self.dict_headers_types), queryText)
 
@@ -592,7 +618,6 @@ class App:
             if not input_int_2.isdigit():
                 self.error_msg("Please enter numbers only in filter " + str(index + 1))
                 return False
-        print("here")
         return True
 
     def check_input_date(self, filter, index):
@@ -672,6 +697,21 @@ class App:
             self.root.tk.call("set_theme", "dark")
             self.switch.configure(text="Dark Mode")
             self.switch_is_on = True
+
+    def change_case_sensitive(self):
+        """
+        change case sensitive
+        :return: None
+        """
+        if self.switch_is_on_case_letters is True:
+            # Set on
+            self.switch_case_letters.configure(text="Not Case Sensitive")
+            self.switch_is_on_case_letters = False
+
+        else:
+            # Set off
+            self.switch_case_letters.configure(text="Case Sensitive")
+            self.switch_is_on_case_letters = True
 
 
 def main():
