@@ -303,7 +303,7 @@ class App:
         for index, value in enumerate(headers):
             # self.insertQueries(index, value)
             self.tree_view_table.heading(index + 1, text=value, anchor='nw')
-            self.tree_view_table.column(index + 1, stretch=YES, width=230)
+            self.tree_view_table.column(index + 1, stretch=NO, width=230)
         # define add button for adding new query
         add_query_btn = ttk.Button(self.frame_middle, text="Add Filter", command=self.add_filter)
         add_query_btn.grid(row=0, column=0, padx=10, pady=15)
