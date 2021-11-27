@@ -115,7 +115,7 @@ class App:
 
         # init arrays for filters type queries
         self.filters_char = ['starts with', 'contains', 'is equal to', 'does not starts with', 'does not contain',
-                             'is not equal to', 'is greater than', 'is less than', 'is less than or equal to', 'is greater than or equal to']
+                             'is not equal to', 'is greater than', 'is less than', 'is less than or equal to', 'is greater than or equal to', 'is equal to None', 'is not equal to None']
         self.filters_int_or_numeric = ['is equal to', 'is between', 'is less than', 'is less than or equal to',
                                        'is greater than',
                                        'is greater than or equal to',
@@ -126,7 +126,7 @@ class App:
         # dictionary for assigning label filter to the actual sign
         self.dict_attri_to_sign = {'is equal to': '= \'#\'', 'is less than': '< \'#\'', 'is less than or equal to': '<= \'#\'',
                                    'is greater than': '> \'#\'', 'is greater than or equal to': '>= \'#\'',
-                                   'is between': '< \'#\' AND $ > \'#\'',
+                                   'is between': '< \'#\' AND $ > \'#\'', 'is equal to None' : 'is NULL', 'is not equal to None' : 'is NOT NULL',
                                    'is not equal to': '!= \'#\'', 'starts with': 'LIKE \'#%\'', 'contains': 'LIKE \'%#%\'',
                                    'does not starts with': 'NOT LIKE \'#%\'', 'does not contain': 'NOT LIKE \'%#%\'',
                                    'today': '= "' + str(date.today()) + ' 00:00:00"',
@@ -408,8 +408,9 @@ class App:
 
         selected_filter = filter.selected_filter_type.get()
         filter.menu_btn_filter.configure(text=selected_filter)
-        filter.init_text_input(self.frame_query_filters)
-        filter.text_input.grid(row=filter.index, column=5, pady=10, padx=10)
+        if selected_filter not in ('is equal to None', 'is not equal to None'):
+            filter.init_text_input(self.frame_query_filters)
+            filter.text_input.grid(row=filter.index, column=5, pady=10, padx=10)
         if selected_filter in ('is between', 'is not between'):
             filter.label_between_to = ttk.Label(self.frame_query_filters, text='to')
             filter.label_between_to.grid(row=filter.index, column=6, pady=10, padx=5)
@@ -589,7 +590,7 @@ class App:
             return self.check_input_int(filter, index)
         if 'NUMERIC' in type:
             return self.check_input_numeric(filter, index)
-        if 'CHAR' in type and filter.selected_filter_type.get() != 'is equal to' and filter.selected_filter_type.get() != 'is not equal to':
+        if 'CHAR' in type and filter.selected_filter_type.get() not in ('is equal to None', 'is not equal to None'):
             input_char = filter.text_input.get().replace(" ", "")
             if len(input_char) == 0:
                 self.error_msg("Please enter input for filter " + str(index + 1))
