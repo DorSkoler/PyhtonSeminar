@@ -483,13 +483,10 @@ class App:
                 else:
                     queryText = queryText.replace('#', str(query.selected_attribute.get()), 2)
             elif 'CHAR' in type:
-                # if the user didnt insert any input the default will be Null
-                if len(query.text_input.get().replace(" ", "")) == 0:
-                    queryText = queryText.replace('#', 'NULL')
-                    queryText = queryText.replace('!=', 'is NOT')
-                    queryText = queryText.replace('=', 'is')
-                    queryText = queryText.replace('\'', '')
-                queryText = queryText.replace('=', 'LIKE')
+                if query.selected_filter_type.get() not in ('is less than or equal to', 'is greater than or equal to'):
+                    queryText = queryText.replace('=', 'LIKE')
+                # if query.selected_filter_type.get() in ('is less than or equal to', 'is greater than or equal to', 'is greater than', 'is less than'):
+
                 queryText = queryText.replace('#', str(query.text_input.get().strip()))
             else:
                 queryText = queryText.replace('#', str(query.text_input.get().replace(" ", "")))
@@ -497,10 +494,7 @@ class App:
             if (index + 1) < len(self.query_filter_list) and len(self.query_filter_list) > 1:
                 queryText += '\nAND '
         queryText += ";"
-        if self.switch_is_on_case_letters:
-            self.conn.execute("PRAGMA case_sensitive_like=TRUE;")
-        else:
-            self.conn.execute("PRAGMA case_sensitive_like=FALSE;")
+        print(queryText)
         # executing the query
         self.data_query(len(self.dict_headers_types), queryText)
 
@@ -707,11 +701,13 @@ class App:
         if self.switch_is_on_case_letters is True:
             # Set on
             self.switch_case_letters.configure(text="Not Case Sensitive")
+            self.conn.execute("PRAGMA case_sensitive_like=FALSE;")
             self.switch_is_on_case_letters = False
 
         else:
             # Set off
             self.switch_case_letters.configure(text="Case Sensitive")
+            self.conn.execute("PRAGMA case_sensitive_like=TRUE;")
             self.switch_is_on_case_letters = True
 
 
