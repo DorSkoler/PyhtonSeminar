@@ -218,7 +218,7 @@ class App:
         :return: inserting frame container for canvas that contains frame for the filters
         """
         self.frame_query_container = LabelFrame(self.root)
-        self.canvas = Canvas(self.frame_query_container, scrollregion=(0, 0, 1000, 500))
+        self.canvas = Canvas(self.frame_query_container, scrollregion=(0, 0, 1000, 1000), height=1000, width=500 )
         self.y_scrollbar_query_frame = ttk.Scrollbar(self.frame_query_container, orient=VERTICAL,
                                                      command=self.canvas.yview)
         self.x_scrollbar_query_frame = ttk.Scrollbar(self.frame_query_container, orient=HORIZONTAL,
@@ -228,7 +228,7 @@ class App:
         self.canvas.pack(fill=BOTH)
         self.canvas.configure(yscrollcommand=self.y_scrollbar_query_frame.set,
                               xscrollcommand=self.x_scrollbar_query_frame.set)
-        self.frame_query_filters = Frame(self.canvas)
+        self.frame_query_filters = Frame(self.canvas, height=1000, width=500)
         self.frame_query_filters.pack()
         self.canvas.create_window((0, 0), anchor='nw', window=self.frame_query_filters)
         # enable scroll with mouse at all point inside the frame
@@ -303,7 +303,7 @@ class App:
         for index, value in enumerate(headers):
             # self.insertQueries(index, value)
             self.tree_view_table.heading(index + 1, text=value, anchor='nw')
-            self.tree_view_table.column(index + 1, stretch=NO, width=230)
+            self.tree_view_table.column(index + 1, stretch=NO)
         # define add button for adding new query
         add_query_btn = ttk.Button(self.frame_middle, text="Add Filter", command=self.add_filter)
         add_query_btn.grid(row=0, column=0, padx=10, pady=15)
@@ -483,9 +483,10 @@ class App:
                 else:
                     queryText = queryText.replace('#', str(query.selected_attribute.get()), 2)
             elif 'CHAR' in type:
+                if not self.switch_is_on_case_letters:
+                    queryText += ' collate NOCASE'
                 if query.selected_filter_type.get() not in ('is less than or equal to', 'is greater than or equal to'):
                     queryText = queryText.replace('=', 'LIKE')
-                # if query.selected_filter_type.get() in ('is less than or equal to', 'is greater than or equal to', 'is greater than', 'is less than'):
 
                 queryText = queryText.replace('#', str(query.text_input.get().strip()))
             else:
@@ -494,7 +495,6 @@ class App:
             if (index + 1) < len(self.query_filter_list) and len(self.query_filter_list) > 1:
                 queryText += '\nAND '
         queryText += ";"
-        print(queryText)
         # executing the query
         self.data_query(len(self.dict_headers_types), queryText)
 
@@ -701,13 +701,13 @@ class App:
         if self.switch_is_on_case_letters is True:
             # Set on
             self.switch_case_letters.configure(text="Not Case Sensitive")
-            self.conn.execute("PRAGMA case_sensitive_like=FALSE;")
+            self.mycursor.execute("PRAGMA case_sensitive_like=FALSE;")
             self.switch_is_on_case_letters = False
 
         else:
             # Set off
             self.switch_case_letters.configure(text="Case Sensitive")
-            self.conn.execute("PRAGMA case_sensitive_like=TRUE;")
+            self.mycursor.execute("PRAGMA case_sensitive_like=TRUE;")
             self.switch_is_on_case_letters = True
 
 
