@@ -228,7 +228,7 @@ class App:
         self.canvas.pack(fill=BOTH)
         self.canvas.configure(yscrollcommand=self.y_scrollbar_query_frame.set,
                               xscrollcommand=self.x_scrollbar_query_frame.set)
-        self.frame_query_filters = Frame(self.canvas, height=1000, width=500)
+        self.frame_query_filters = Frame(self.canvas)
         self.frame_query_filters.pack()
         self.canvas.create_window((0, 0), anchor='nw', window=self.frame_query_filters)
         # enable scroll with mouse at all point inside the frame
@@ -316,7 +316,8 @@ class App:
         self.switch_case_letters.grid(row=0, column=2, padx=25)
         self.switch_is_on_case_letters = False
 
-        self.execute_selected_table(length_headers)
+        query = "SELECT *  FROM " + self.selected_table_name.get()
+        self.data_query(length_headers, query)
         self.menu_select_table_btn.configure(text=self.selected_table_name.get())
 
     def add_filter(self):
@@ -508,18 +509,6 @@ class App:
         for x in self.tree_view_table.get_children():
             self.tree_view_table.delete(x)
         self.mycursor.execute(input_query)
-        for row in self.mycursor:
-            self.tree_view_table.insert('', 'end', values=row[0:headers_length])
-
-    def execute_selected_table(self, headers_length):
-        """
-        initialize the table by the user choice
-        :param headers_length: length of the dictionary of headers names
-        :return: executing and showing the right table by the user choice
-        """
-        for x in self.tree_view_table.get_children():
-            self.tree_view_table.delete(x)
-        self.mycursor.execute("SELECT *  FROM " + self.selected_table_name.get())
         for row in self.mycursor:
             self.tree_view_table.insert('', 'end', values=row[0:headers_length])
 
